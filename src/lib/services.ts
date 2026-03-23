@@ -11,6 +11,7 @@ export interface ServiceOption {
   id: string;
   name: string;
   price: number;
+  unit?: "piece" | "kg";
   description?: string;
 }
 
@@ -20,6 +21,7 @@ export interface Order {
   clientPhone: string;
   service: Service;
   selectedOption: ServiceOption;
+  quantity: number;
   location: "sur_place" | "domicile";
   address?: string;
   payment: "cash" | "airtel_money" | "moov" | "zamani";
@@ -28,7 +30,7 @@ export interface Order {
   total: number;
 }
 
-export const SERVICES: Service[] = [
+export const DEFAULT_SERVICES: Service[] = [
   {
     id: "vidange",
     category: "auto",
@@ -36,8 +38,8 @@ export const SERVICES: Service[] = [
     description: "Changement d'huile moteur avec filtre",
     icon: "🔧",
     options: [
-      { id: "vidange-petite", name: "Petite voiture", price: 10000 },
-      { id: "vidange-suv", name: "SUV / 4x4", price: 15000 },
+      { id: "vidange-petite", name: "Petite voiture", price: 10000, unit: "piece" },
+      { id: "vidange-suv", name: "SUV / 4x4", price: 15000, unit: "piece" },
     ],
   },
   {
@@ -47,8 +49,8 @@ export const SERVICES: Service[] = [
     description: "Lavage extérieur complet de votre véhicule",
     icon: "🚗",
     options: [
-      { id: "lavage-standard", name: "Standard", price: 3000 },
-      { id: "lavage-premium", name: "Premium", price: 5000, description: "Avec cire et polish" },
+      { id: "lavage-standard", name: "Standard", price: 3000, unit: "piece" },
+      { id: "lavage-premium", name: "Premium", price: 5000, unit: "piece", description: "Avec cire et polish" },
     ],
   },
   {
@@ -58,8 +60,8 @@ export const SERVICES: Service[] = [
     description: "Aspiration, nettoyage sièges et tableau de bord",
     icon: "✨",
     options: [
-      { id: "nettoyage-standard", name: "Standard", price: 4000 },
-      { id: "nettoyage-complet", name: "Complet", price: 7000, description: "Avec shampoing sièges" },
+      { id: "nettoyage-standard", name: "Standard", price: 4000, unit: "piece" },
+      { id: "nettoyage-complet", name: "Complet", price: 7000, unit: "piece", description: "Avec shampoing sièges" },
     ],
   },
   {
@@ -69,9 +71,10 @@ export const SERVICES: Service[] = [
     description: "Lavage professionnel de vos vêtements",
     icon: "👕",
     options: [
-      { id: "chemise", name: "Chemise", price: 1000 },
-      { id: "pantalon", name: "Pantalon", price: 1500 },
-      { id: "costume", name: "Costume complet", price: 3500 },
+      { id: "chemise", name: "Chemise", price: 1000, unit: "piece" },
+      { id: "pantalon", name: "Pantalon", price: 1500, unit: "piece" },
+      { id: "costume", name: "Costume complet", price: 3500, unit: "piece" },
+      { id: "lavage-kg", name: "Au kilogramme", price: 1500, unit: "kg", description: "Prix par kg" },
     ],
   },
   {
@@ -81,9 +84,10 @@ export const SERVICES: Service[] = [
     description: "Repassage soigné de vos vêtements",
     icon: "👔",
     options: [
-      { id: "repassage-chemise", name: "Chemise", price: 500 },
-      { id: "repassage-pantalon", name: "Pantalon", price: 750 },
-      { id: "repassage-costume", name: "Costume", price: 2000 },
+      { id: "repassage-chemise", name: "Chemise", price: 500, unit: "piece" },
+      { id: "repassage-pantalon", name: "Pantalon", price: 750, unit: "piece" },
+      { id: "repassage-costume", name: "Costume", price: 2000, unit: "piece" },
+      { id: "repassage-kg", name: "Au kilogramme", price: 1000, unit: "kg", description: "Prix par kg" },
     ],
   },
   {
@@ -93,9 +97,9 @@ export const SERVICES: Service[] = [
     description: "On vient chercher et on vous livre",
     icon: "🚚",
     options: [
-      { id: "livraison-aller", name: "Récupération seule", price: 1000 },
-      { id: "livraison-retour", name: "Livraison seule", price: 1000 },
-      { id: "livraison-ar", name: "Aller-retour", price: 1500 },
+      { id: "livraison-aller", name: "Récupération seule", price: 1000, unit: "piece" },
+      { id: "livraison-retour", name: "Livraison seule", price: 1000, unit: "piece" },
+      { id: "livraison-ar", name: "Aller-retour", price: 1500, unit: "piece" },
     ],
   },
 ];
