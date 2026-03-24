@@ -1,4 +1,4 @@
-import { ArrowLeft, Home, ClipboardList, LayoutDashboard } from "lucide-react";
+import { Home, ClipboardList } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const BottomNav = () => {
@@ -8,7 +8,6 @@ const BottomNav = () => {
   const items = [
     { icon: Home, label: "Accueil", path: "/" },
     { icon: ClipboardList, label: "Commandes", path: "/my-orders" },
-    { icon: LayoutDashboard, label: "Admin", path: "/admin" },
   ];
 
   return (
