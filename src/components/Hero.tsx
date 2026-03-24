@@ -28,7 +28,7 @@ const Hero = () => {
             className="flex items-center justify-between mb-6"
           >
             <div className="flex items-center gap-3">
-              <img src={logo} alt="WashGo Niger" className="w-12 h-12 rounded-xl bg-white/90 p-1 shadow-md object-contain" />
+              <img src={logo} alt="WashGo Niger" className="w-12 h-12 rounded-xl p-0.5 object-contain" />
               <div>
                 <h1 className="text-xl font-extrabold text-primary-foreground tracking-tight leading-none">
                   WashGo <span className="text-primary-foreground/70 font-semibold text-sm">Niger</span>
