@@ -2,8 +2,8 @@ import { useAppState } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { BarChart3, ShoppingBag, TrendingUp, CheckCircle2, Clock, XCircle, Settings, Plus, Trash2, Save, ArrowLeft, Scale } from "lucide-react";
-import { useState } from "react";
+import { BarChart3, ShoppingBag, TrendingUp, CheckCircle2, Clock, XCircle, Settings, Plus, Trash2, Save, ArrowLeft, LogOut } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Order, Service, ServiceOption } from "@/lib/services";
 import { toast } from "sonner";
@@ -27,6 +27,18 @@ const AdminPage = () => {
   const navigate = useNavigate();
   const [tab, setTab] = useState<"dashboard" | "orders" | "services">("dashboard");
 
+  useEffect(() => {
+    if (sessionStorage.getItem("admin_auth") !== "true") {
+      navigate("/login", { replace: true });
+    }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("admin_auth");
+    navigate("/login");
+    toast.success("Déconnexion réussie");
+  };
+
   const totalRevenue = orders.filter((o) => o.status === "completed").reduce((sum, o) => sum + o.total, 0);
   const pendingCount = orders.filter((o) => o.status === "pending").length;
   const completedCount = orders.filter((o) => o.status === "completed").length;
@@ -42,9 +54,14 @@ const AdminPage = () => {
               <h1 className="text-xl font-extrabold text-primary-foreground">Admin Panel</h1>
               <p className="text-sm text-primary-foreground/60">CleanCar Niger</p>
             </div>
-            <button onClick={() => navigate("/")} className="flex items-center gap-1 text-primary-foreground/70 text-sm font-medium hover:text-primary-foreground transition-colors">
-              <ArrowLeft className="w-4 h-4" /> Retour
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => navigate("/")} className="flex items-center gap-1 text-primary-foreground/70 text-sm font-medium hover:text-primary-foreground transition-colors">
+                <ArrowLeft className="w-4 h-4" /> Retour
+              </button>
+              <button onClick={handleLogout} className="flex items-center gap-1 text-primary-foreground/70 text-sm font-medium hover:text-primary-foreground transition-colors ml-2">
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[
@@ -245,9 +262,7 @@ const ServicesTab = ({
                 <div className="text-xs text-muted-foreground">{service.options.length} options • {service.category}</div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Settings className={`w-4 h-4 text-muted-foreground transition-transform ${editingId === service.id ? "rotate-90" : ""}`} />
-            </div>
+            <Settings className={`w-4 h-4 text-muted-foreground transition-transform ${editingId === service.id ? "rotate-90" : ""}`} />
           </div>
 
           <AnimatePresence>
@@ -292,10 +307,6 @@ const ServiceEditor = ({ service, onSave, onDelete }: { service: Service; onSave
     setOptions(options.filter((_, i) => i !== idx));
   };
 
-  const handleSave = () => {
-    onSave({ ...service, name, description, icon, options });
-  };
-
   return (
     <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
       <div className="grid grid-cols-[48px_1fr] gap-2">
@@ -313,19 +324,8 @@ const ServiceEditor = ({ service, onSave, onDelete }: { service: Service; onSave
         </div>
         {options.map((opt, idx) => (
           <div key={opt.id} className="flex gap-2 items-center">
-            <Input
-              value={opt.name}
-              onChange={(e) => updateOption(idx, "name", e.target.value)}
-              className="rounded-xl text-sm flex-1"
-              placeholder="Nom"
-            />
-            <Input
-              type="number"
-              value={opt.price}
-              onChange={(e) => updateOption(idx, "price", parseInt(e.target.value) || 0)}
-              className="rounded-xl text-sm w-24"
-              placeholder="Prix"
-            />
+            <Input value={opt.name} onChange={(e) => updateOption(idx, "name", e.target.value)} className="rounded-xl text-sm flex-1" placeholder="Nom" />
+            <Input type="number" value={opt.price} onChange={(e) => updateOption(idx, "price", parseInt(e.target.value) || 0)} className="rounded-xl text-sm w-24" placeholder="Prix" />
             <select
               value={opt.unit || "piece"}
               onChange={(e) => updateOption(idx, "unit", e.target.value)}
@@ -342,7 +342,7 @@ const ServiceEditor = ({ service, onSave, onDelete }: { service: Service; onSave
       </div>
 
       <div className="flex gap-2 pt-2">
-        <Button variant="hero" size="sm" className="flex-1 rounded-xl" onClick={handleSave}>
+        <Button variant="hero" size="sm" className="flex-1 rounded-xl" onClick={() => onSave({ ...service, name, description, icon, options })}>
           <Save className="w-4 h-4" /> Enregistrer
         </Button>
         <Button variant="destructive" size="sm" className="rounded-xl" onClick={onDelete}>
