@@ -1,0 +1,17 @@
+{
+  "name": "WashGo Niger",
+  "short_name": "WashGo",
+  "description": "Lavage auto, vidange et pressing à domicile ou sur place à Niamey",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#1a6dc2",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
