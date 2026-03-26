@@ -29,13 +29,28 @@ const AdminPage = () => {
   const [tab, setTab] = useState<"dashboard" | "orders" | "services">("dashboard");
 
   useEffect(() => {
-    if (sessionStorage.getItem("admin_auth") !== "true") {
-      navigate("/login", { replace: true });
-    }
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/login", { replace: true });
+        return;
+      }
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (!roleData) {
+        await supabase.auth.signOut();
+        navigate("/login", { replace: true });
+      }
+    };
+    checkAuth();
   }, [navigate]);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("admin_auth");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate("/login");
     toast.success("Déconnexion réussie");
   };
