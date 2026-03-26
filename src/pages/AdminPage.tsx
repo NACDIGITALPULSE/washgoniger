@@ -259,7 +259,7 @@ const ServicesTab = ({
       <AnimatePresence>
         {showAdd && (
           <AddServiceForm
-            onAdd={(s) => { addService(s); setShowAdd(false); toast.success("Service ajouté !"); }}
+            onAdd={async (s) => { await addService(s); setShowAdd(false); toast.success("Service ajouté !"); }}
             onCancel={() => setShowAdd(false)}
           />
         )}
@@ -291,8 +291,8 @@ const ServicesTab = ({
               >
                 <ServiceEditor
                   service={service}
-                  onSave={(s) => { updateService(s); toast.success("Service mis à jour !"); }}
-                  onDelete={() => { removeService(service.id); toast.success("Service supprimé"); setEditingId(null); }}
+                  onSave={async (s) => { await updateService(s); toast.success("Service mis à jour !"); }}
+                  onDelete={async () => { await removeService(service.id); toast.success("Service supprimé"); setEditingId(null); }}
                 />
               </motion.div>
             )}
