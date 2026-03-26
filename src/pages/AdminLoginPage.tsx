@@ -6,9 +6,7 @@ import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 import { Lock, Mail, ArrowLeft, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-
-const ADMIN_EMAIL = "nouredinchekaraou@live.fr";
-const ADMIN_PASSWORD = "Admin2026!";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminLoginPage = () => {
   const [email, setEmail] = useState("");
@@ -16,20 +14,44 @@ const AdminLoginPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    setTimeout(() => {
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        sessionStorage.setItem("admin_auth", "true");
-        toast.success("Connexion réussie !");
-        navigate("/admin");
-      } else {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
         toast.error("Email ou mot de passe incorrect");
+        setLoading(false);
+        return;
       }
+
+      // Check admin role
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (!roleData) {
+        await supabase.auth.signOut();
+        toast.error("Accès non autorisé");
+        setLoading(false);
+        return;
+      }
+
+      toast.success("Connexion réussie !");
+      navigate("/admin");
+    } catch {
+      toast.error("Erreur de connexion");
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   };
 
   return (
