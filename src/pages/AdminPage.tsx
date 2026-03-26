@@ -291,8 +291,8 @@ const ServicesTab = ({
               >
                 <ServiceEditor
                   service={service}
-                  onSave={(s) => { updateService(s); toast.success("Service mis à jour !"); }}
-                  onDelete={() => { removeService(service.id); toast.success("Service supprimé"); setEditingId(null); }}
+                  onSave={async (s) => { await updateService(s); toast.success("Service mis à jour !"); }}
+                  onDelete={async () => { await removeService(service.id); toast.success("Service supprimé"); setEditingId(null); }}
                 />
               </motion.div>
             )}
