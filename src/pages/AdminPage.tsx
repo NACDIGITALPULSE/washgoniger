@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Order, Service, ServiceOption } from "@/lib/services";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const statusActions: Record<string, { next: Order["status"]; label: string }> = {
   pending: { next: "accepted", label: "Accepter" },
