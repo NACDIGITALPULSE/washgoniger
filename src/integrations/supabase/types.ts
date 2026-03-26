@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      services: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          name: string
+          options: Json
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id: string
+          name: string
+          options?: Json
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          options?: Json
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
