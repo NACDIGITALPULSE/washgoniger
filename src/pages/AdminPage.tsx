@@ -259,7 +259,7 @@ const ServicesTab = ({
       <AnimatePresence>
         {showAdd && (
           <AddServiceForm
-            onAdd={(s) => { addService(s); setShowAdd(false); toast.success("Service ajouté !"); }}
+            onAdd={async (s) => { await addService(s); setShowAdd(false); toast.success("Service ajouté !"); }}
             onCancel={() => setShowAdd(false)}
           />
         )}
