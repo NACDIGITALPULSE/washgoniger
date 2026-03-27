@@ -49,6 +49,13 @@ const AdminPage = () => {
     checkAuth();
   }, [navigate]);
 
+  const buildWhatsAppUrl = (phone: string, serviceName: string, clientName: string, total: number) => {
+    const cleanPhone = phone.replace(/\D/g, "");
+    const fullPhone = cleanPhone.startsWith("227") ? cleanPhone : `227${cleanPhone}`;
+    const message = `Bonjour ${clientName}, votre commande *${serviceName}* d'un montant de *${total.toLocaleString("fr-FR")} FCFA* a bien été reçue. Merci pour votre confiance ! 🚗✨ — CleanCar Niger`;
+    return `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
+  };
+
   // Realtime notifications for new orders
   useEffect(() => {
     const channel = supabase
@@ -58,9 +65,14 @@ const AdminPage = () => {
         { event: 'INSERT', schema: 'public', table: 'orders' },
         (payload) => {
           const newOrder = payload.new as any;
+          const whatsappUrl = buildWhatsAppUrl(newOrder.client_phone, newOrder.service_name, newOrder.client_name, Number(newOrder.total));
           toast.success(`🔔 Nouvelle commande !`, {
             description: `${newOrder.service_name} — ${newOrder.client_name} (${Number(newOrder.total).toLocaleString("fr-FR")} FCFA)`,
-            duration: 10000,
+            duration: 15000,
+            action: {
+              label: "📱 WhatsApp",
+              onClick: () => window.open(whatsappUrl, "_blank"),
+            },
           });
           // Play notification sound
           try {
