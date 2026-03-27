@@ -2,7 +2,7 @@ import { useAppState } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { BarChart3, ShoppingBag, TrendingUp, CheckCircle2, Clock, XCircle, Settings, Plus, Trash2, Save, ArrowLeft, LogOut, Bell, MessageCircle } from "lucide-react";
+import { BarChart3, ShoppingBag, TrendingUp, CheckCircle2, Clock, XCircle, Settings, Plus, Trash2, Save, ArrowLeft, LogOut, Bell, MessageCircle, Search, Filter } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Order, Service, ServiceOption } from "@/lib/services";
@@ -49,10 +49,17 @@ const AdminPage = () => {
     checkAuth();
   }, [navigate]);
 
-  const buildWhatsAppUrl = (phone: string, serviceName: string, clientName: string, total: number) => {
-    const cleanPhone = phone.replace(/\D/g, "");
+  const ADMIN_WHATSAPP = "22788082987";
+
+  const buildAdminWhatsAppUrl = (serviceName: string, clientName: string, clientPhone: string, total: number, location: string) => {
+    const message = `🔔 *Nouvelle commande WashGo !*\n\n📋 Service: *${serviceName}*\n👤 Client: *${clientName}*\n📞 Tél: ${clientPhone}\n📍 Lieu: ${location === "domicile" ? "À domicile" : "Sur place"}\n💰 Total: *${total.toLocaleString("fr-FR")} FCFA*\n\n⏰ ${new Date().toLocaleString("fr-FR")}`;
+    return `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(message)}`;
+  };
+
+  const buildClientWhatsAppUrl = (clientPhone: string, clientName: string, serviceName: string, total: number) => {
+    const cleanPhone = clientPhone.replace(/\D/g, "");
     const fullPhone = cleanPhone.startsWith("227") ? cleanPhone : `227${cleanPhone}`;
-    const message = `Bonjour ${clientName}, votre commande *${serviceName}* d'un montant de *${total.toLocaleString("fr-FR")} FCFA* a bien été reçue. Merci pour votre confiance ! 🚗✨ — CleanCar Niger`;
+    const message = `Bonjour ${clientName}, votre commande *${serviceName}* d'un montant de *${total.toLocaleString("fr-FR")} FCFA* a bien été reçue. Merci pour votre confiance ! 🚗✨ — WashGo Niger`;
     return `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
   };
 
@@ -65,7 +72,7 @@ const AdminPage = () => {
         { event: 'INSERT', schema: 'public', table: 'orders' },
         (payload) => {
           const newOrder = payload.new as any;
-          const whatsappUrl = buildWhatsAppUrl(newOrder.client_phone, newOrder.service_name, newOrder.client_name, Number(newOrder.total));
+          const whatsappUrl = buildAdminWhatsAppUrl(newOrder.service_name, newOrder.client_name, newOrder.client_phone, Number(newOrder.total), newOrder.location);
           toast.success(`🔔 Nouvelle commande !`, {
             description: `${newOrder.service_name} — ${newOrder.client_name} (${Number(newOrder.total).toLocaleString("fr-FR")} FCFA)`,
             duration: 15000,
@@ -74,7 +81,6 @@ const AdminPage = () => {
               onClick: () => window.open(whatsappUrl, "_blank"),
             },
           });
-          // Play notification sound
           try {
             const audio = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGczJj+QxN3LdUMtQYC02NZ+TDM+eLHX2YlVODx0rNPXkFw7OnSu1deMYDs5c7DV2JRgPDlxr9bZlWI9OXKw1tqVYj45c7HX25ViPjp1s9nclmM/O3i22d2YZD87d7bZ3pllQDt4t9remWVAO3i42d+ZZUA8eLna35plQDx5utremGVAPHm62t+ZZUA8ebrb35plQDx5u9vfmmZAPXm729+aZkA9ebzc4JtmQD15vNzgm2ZAPnm83OCbZ0A+eb3d4JxnQD55vd3gnGdAPnm93eCcZ0A+eb3d4JxnQD55vd3gnGdAPnm93eCcaEA=");
             audio.volume = 0.5;
@@ -213,22 +219,72 @@ const DashboardTab = ({ orders, totalRevenue }: { orders: Order[]; totalRevenue:
 );
 
 const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrderStatus: (id: string, status: Order["status"]) => void }) => {
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
   const openWhatsApp = (order: Order) => {
     const cleanPhone = order.clientPhone.replace(/\D/g, "");
     const fullPhone = cleanPhone.startsWith("227") ? cleanPhone : `227${cleanPhone}`;
-    const message = `Bonjour ${order.clientName}, votre commande *${order.service.name}* d'un montant de *${order.total.toLocaleString("fr-FR")} FCFA* a bien été reçue. Merci pour votre confiance ! 🚗✨ — CleanCar Niger`;
+    const message = `Bonjour ${order.clientName}, votre commande *${order.service.name}* d'un montant de *${order.total.toLocaleString("fr-FR")} FCFA* a bien été reçue. Merci pour votre confiance ! 🚗✨ — WashGo Niger`;
     window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
+  const filteredOrders = orders.filter((o) => {
+    const matchStatus = statusFilter === "all" || o.status === statusFilter;
+    const matchSearch = !searchQuery || o.clientName.toLowerCase().includes(searchQuery.toLowerCase()) || o.clientPhone.includes(searchQuery);
+    return matchStatus && matchSearch;
+  });
+
+  const filterButtons = [
+    { key: "all", label: "Toutes" },
+    { key: "pending", label: "En attente" },
+    { key: "accepted", label: "Acceptées" },
+    { key: "in_progress", label: "En cours" },
+    { key: "completed", label: "Terminées" },
+  ];
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
-      {orders.length === 0 ? (
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Rechercher un client..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 rounded-xl text-sm h-9"
+        />
+      </div>
+
+      {/* Status filter */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        {filterButtons.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setStatusFilter(f.key)}
+            className={`whitespace-nowrap text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
+              statusFilter === f.key
+                ? "hero-gradient text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {f.label}
+            {f.key !== "all" && (
+              <span className="ml-1 opacity-70">
+                {orders.filter((o) => o.status === f.key).length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {filteredOrders.length === 0 ? (
         <div className="text-center py-16">
           <ShoppingBag className="w-14 h-14 mx-auto text-muted-foreground/20 mb-3" />
           <p className="text-muted-foreground text-sm">Aucune commande</p>
         </div>
       ) : (
-        orders.map((order, i) => {
+        filteredOrders.map((order, i) => {
           const status = statusLabels[order.status];
           const action = statusActions[order.status];
           return (
@@ -264,7 +320,7 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
                   <Button
                     variant="outline"
                     size="sm"
-                    className="rounded-xl text-green-600 border-green-200 hover:bg-green-50"
+                    className="rounded-xl text-success border-success/20 hover:bg-success/5"
                     onClick={() => openWhatsApp(order)}
                   >
                     <MessageCircle className="w-4 h-4" />
