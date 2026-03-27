@@ -212,61 +212,82 @@ const DashboardTab = ({ orders, totalRevenue }: { orders: Order[]; totalRevenue:
   </motion.div>
 );
 
-const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrderStatus: (id: string, status: Order["status"]) => void }) => (
-  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
-    {orders.length === 0 ? (
-      <div className="text-center py-16">
-        <ShoppingBag className="w-14 h-14 mx-auto text-muted-foreground/20 mb-3" />
-        <p className="text-muted-foreground text-sm">Aucune commande</p>
-      </div>
-    ) : (
-      orders.map((order, i) => {
-        const status = statusLabels[order.status];
-        const action = statusActions[order.status];
-        return (
-          <motion.div
-            key={order.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04 }}
-            className="glass-card rounded-2xl p-4"
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <div className="font-bold text-foreground text-sm">
-                  {order.service.icon} {order.service.name} — {order.selectedOption.name}
-                  {order.quantity > 1 && (
-                    <span className="text-muted-foreground font-normal ml-1">
-                      × {order.quantity}{order.selectedOption.unit === "kg" ? " kg" : ""}
-                    </span>
+const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrderStatus: (id: string, status: Order["status"]) => void }) => {
+  const openWhatsApp = (order: Order) => {
+    const cleanPhone = order.clientPhone.replace(/\D/g, "");
+    const fullPhone = cleanPhone.startsWith("227") ? cleanPhone : `227${cleanPhone}`;
+    const message = `Bonjour ${order.clientName}, votre commande *${order.service.name}* d'un montant de *${order.total.toLocaleString("fr-FR")} FCFA* a bien été reçue. Merci pour votre confiance ! 🚗✨ — CleanCar Niger`;
+    window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, "_blank");
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
+      {orders.length === 0 ? (
+        <div className="text-center py-16">
+          <ShoppingBag className="w-14 h-14 mx-auto text-muted-foreground/20 mb-3" />
+          <p className="text-muted-foreground text-sm">Aucune commande</p>
+        </div>
+      ) : (
+        orders.map((order, i) => {
+          const status = statusLabels[order.status];
+          const action = statusActions[order.status];
+          return (
+            <motion.div
+              key={order.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04 }}
+              className="glass-card rounded-2xl p-4"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="font-bold text-foreground text-sm">
+                    {order.service.icon} {order.service.name} — {order.selectedOption.name}
+                    {order.quantity > 1 && (
+                      <span className="text-muted-foreground font-normal ml-1">
+                        × {order.quantity}{order.selectedOption.unit === "kg" ? " kg" : ""}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">{order.clientName} • {order.clientPhone}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {order.location === "domicile" ? `📍 ${order.address}` : "🏪 Sur place"} • {order.payment === "cash" ? "💵 Cash" : `📱 ${order.payment}`}
+                  </div>
+                </div>
+                <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full text-primary-foreground ${status.color}`}>
+                  {status.label}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-3 border-t border-border">
+                <span className="text-sm font-extrabold text-primary">{order.total.toLocaleString("fr-FR")} FCFA</span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl text-green-600 border-green-200 hover:bg-green-50"
+                    onClick={() => openWhatsApp(order)}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                  </Button>
+                  {order.status === "pending" && (
+                    <Button variant="outline" size="sm" className="rounded-xl" onClick={() => updateOrderStatus(order.id, "cancelled")}>
+                      Refuser
+                    </Button>
+                  )}
+                  {action && (
+                    <Button variant="success" size="sm" className="rounded-xl" onClick={() => updateOrderStatus(order.id, action.next)}>
+                      {action.label}
+                    </Button>
                   )}
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">{order.clientName} • {order.clientPhone}</div>
-                <div className="text-xs text-muted-foreground">
-                  {order.location === "domicile" ? `📍 ${order.address}` : "🏪 Sur place"} • {order.payment === "cash" ? "💵 Cash" : `📱 ${order.payment}`}
-                </div>
               </div>
-              <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full text-primary-foreground ${status.color}`}>
-                {status.label}
-              </span>
-            </div>
-            <div className="flex items-center justify-between pt-3 border-t border-border">
-              <span className="text-sm font-extrabold text-primary">{order.total.toLocaleString("fr-FR")} FCFA</span>
-              <div className="flex gap-2">
-                {order.status === "pending" && (
-                  <Button variant="outline" size="sm" className="rounded-xl" onClick={() => updateOrderStatus(order.id, "cancelled")}>
-                    Refuser
-                  </Button>
-                )}
-                {action && (
-                  <Button variant="success" size="sm" className="rounded-xl" onClick={() => updateOrderStatus(order.id, action.next)}>
-                    {action.label}
-                  </Button>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        );
+            </motion.div>
+          );
+        })
+      )}
+    </motion.div>
+  );
+};
       })
     )}
   </motion.div>
