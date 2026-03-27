@@ -219,22 +219,72 @@ const DashboardTab = ({ orders, totalRevenue }: { orders: Order[]; totalRevenue:
 );
 
 const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrderStatus: (id: string, status: Order["status"]) => void }) => {
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
   const openWhatsApp = (order: Order) => {
     const cleanPhone = order.clientPhone.replace(/\D/g, "");
     const fullPhone = cleanPhone.startsWith("227") ? cleanPhone : `227${cleanPhone}`;
-    const message = `Bonjour ${order.clientName}, votre commande *${order.service.name}* d'un montant de *${order.total.toLocaleString("fr-FR")} FCFA* a bien été reçue. Merci pour votre confiance ! 🚗✨ — CleanCar Niger`;
+    const message = `Bonjour ${order.clientName}, votre commande *${order.service.name}* d'un montant de *${order.total.toLocaleString("fr-FR")} FCFA* a bien été reçue. Merci pour votre confiance ! 🚗✨ — WashGo Niger`;
     window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
+  const filteredOrders = orders.filter((o) => {
+    const matchStatus = statusFilter === "all" || o.status === statusFilter;
+    const matchSearch = !searchQuery || o.clientName.toLowerCase().includes(searchQuery.toLowerCase()) || o.clientPhone.includes(searchQuery);
+    return matchStatus && matchSearch;
+  });
+
+  const filterButtons = [
+    { key: "all", label: "Toutes" },
+    { key: "pending", label: "En attente" },
+    { key: "accepted", label: "Acceptées" },
+    { key: "in_progress", label: "En cours" },
+    { key: "completed", label: "Terminées" },
+  ];
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
-      {orders.length === 0 ? (
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Rechercher un client..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 rounded-xl text-sm h-9"
+        />
+      </div>
+
+      {/* Status filter */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        {filterButtons.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setStatusFilter(f.key)}
+            className={`whitespace-nowrap text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${
+              statusFilter === f.key
+                ? "hero-gradient text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {f.label}
+            {f.key !== "all" && (
+              <span className="ml-1 opacity-70">
+                {orders.filter((o) => o.status === f.key).length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {filteredOrders.length === 0 ? (
         <div className="text-center py-16">
           <ShoppingBag className="w-14 h-14 mx-auto text-muted-foreground/20 mb-3" />
           <p className="text-muted-foreground text-sm">Aucune commande</p>
         </div>
       ) : (
-        orders.map((order, i) => {
+        filteredOrders.map((order, i) => {
           const status = statusLabels[order.status];
           const action = statusActions[order.status];
           return (
@@ -270,7 +320,7 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
                   <Button
                     variant="outline"
                     size="sm"
-                    className="rounded-xl text-green-600 border-green-200 hover:bg-green-50"
+                    className="rounded-xl text-success border-success/20 hover:bg-success/5"
                     onClick={() => openWhatsApp(order)}
                   >
                     <MessageCircle className="w-4 h-4" />
