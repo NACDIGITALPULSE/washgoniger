@@ -60,8 +60,9 @@ const OrderPage = () => {
     };
 
     await addOrder(order);
+    localStorage.setItem("washgo_phone", phone);
     toast.success("Commande envoyée ! 🎉");
-    navigate("/my-orders");
+    navigate("/order-confirmation", { state: { order } });
   };
 
   return (

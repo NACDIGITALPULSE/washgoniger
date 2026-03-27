@@ -1,8 +1,13 @@
-import { useAppState } from "@/lib/store";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
-import { motion } from "framer-motion";
-import { Package, Scale } from "lucide-react";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
+import { motion, AnimatePresence } from "framer-motion";
+import { Package, Scale, Phone, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Order } from "@/lib/services";
 
 const statusLabels: Record<string, { label: string; color: string }> = {
   pending: { label: "En attente", color: "bg-warning" },
@@ -13,22 +18,95 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 };
 
 const MyOrdersPage = () => {
-  const { orders } = useAppState();
+  const [phone, setPhone] = useState(() => localStorage.getItem("washgo_phone") || "");
+  const [searchPhone, setSearchPhone] = useState(phone);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(!!phone);
+
+  const fetchOrders = async (phoneNumber: string) => {
+    if (!phoneNumber.trim()) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("client_phone", phoneNumber.trim())
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setOrders(data.map((row: any) => ({
+        id: row.id,
+        clientName: row.client_name,
+        clientPhone: row.client_phone,
+        service: { id: row.service_id, name: row.service_name, icon: row.service_icon, category: "auto" as const, description: "", options: [] },
+        selectedOption: row.selected_option as any,
+        quantity: Number(row.quantity),
+        location: row.location,
+        address: row.address || undefined,
+        payment: row.payment,
+        status: row.status,
+        createdAt: new Date(row.created_at),
+        total: Number(row.total),
+      })));
+    }
+    setLoading(false);
+    setSearched(true);
+  };
+
+  useEffect(() => {
+    if (phone) fetchOrders(phone);
+  }, []);
+
+  const handleSearch = () => {
+    localStorage.setItem("washgo_phone", searchPhone);
+    setPhone(searchPhone);
+    fetchOrders(searchPhone);
+  };
 
   return (
     <div className="min-h-screen pb-20 bg-background">
       <PageHeader title="📋 Mes Commandes" />
       <div className="container max-w-lg mx-auto px-4 py-6">
-        {orders.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="w-20 h-20 rounded-3xl bg-muted flex items-center justify-center mx-auto mb-4">
-              <Package className="w-10 h-10 text-muted-foreground/40" />
+        {/* Phone search */}
+        <div className="glass-card rounded-2xl p-4 mb-6">
+          <p className="text-sm text-muted-foreground mb-3">Entrez votre numéro pour retrouver vos commandes</p>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Phone className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Ex: 88082987"
+                value={searchPhone}
+                onChange={(e) => setSearchPhone(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                className="pl-10 rounded-xl"
+              />
             </div>
-            <p className="text-muted-foreground font-medium">Aucune commande pour le moment</p>
-            <p className="text-sm text-muted-foreground/60 mt-1">Vos commandes apparaîtront ici</p>
+            <Button variant="hero" className="rounded-xl" onClick={handleSearch}>
+              <Search className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-16">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-muted-foreground text-sm">Recherche en cours...</p>
+          </div>
+        ) : !searched ? (
+          <div className="text-center py-16">
+            <Phone className="w-14 h-14 mx-auto text-muted-foreground/20 mb-3" />
+            <p className="text-muted-foreground font-medium">Entrez votre numéro de téléphone</p>
+            <p className="text-sm text-muted-foreground/60 mt-1">pour retrouver vos commandes</p>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="text-center py-16">
+            <Package className="w-14 h-14 mx-auto text-muted-foreground/20 mb-3" />
+            <p className="text-muted-foreground font-medium">Aucune commande trouvée</p>
+            <p className="text-sm text-muted-foreground/60 mt-1">pour ce numéro de téléphone</p>
           </div>
         ) : (
           <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">{orders.length} commande{orders.length > 1 ? "s" : ""} trouvée{orders.length > 1 ? "s" : ""}</p>
             {orders.map((order, i) => {
               const status = statusLabels[order.status];
               const isKg = order.selectedOption.unit === "kg";
@@ -72,6 +150,7 @@ const MyOrdersPage = () => {
           </div>
         )}
       </div>
+      <WhatsAppFloat />
       <BottomNav />
     </div>
   );
