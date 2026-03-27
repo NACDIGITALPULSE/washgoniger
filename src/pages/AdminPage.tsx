@@ -288,10 +288,6 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
     </motion.div>
   );
 };
-      })
-    )}
-  </motion.div>
-);
 
 // ── Services Management Tab ──
 const ServicesTab = ({
