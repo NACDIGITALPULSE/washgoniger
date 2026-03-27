@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      orders: {
+        Row: {
+          address: string | null
+          client_name: string
+          client_phone: string
+          created_at: string
+          id: string
+          location: string
+          payment: string
+          quantity: number
+          selected_option: Json
+          service_icon: string
+          service_id: string
+          service_name: string
+          status: string
+          total: number
+        }
+        Insert: {
+          address?: string | null
+          client_name: string
+          client_phone: string
+          created_at?: string
+          id: string
+          location?: string
+          payment?: string
+          quantity?: number
+          selected_option: Json
+          service_icon?: string
+          service_id: string
+          service_name: string
+          status?: string
+          total?: number
+        }
+        Update: {
+          address?: string | null
+          client_name?: string
+          client_phone?: string
+          created_at?: string
+          id?: string
+          location?: string
+          payment?: string
+          quantity?: number
+          selected_option?: Json
+          service_icon?: string
+          service_id?: string
+          service_name?: string
+          status?: string
+          total?: number
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           category: string

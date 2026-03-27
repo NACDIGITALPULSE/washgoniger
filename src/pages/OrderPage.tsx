@@ -34,7 +34,7 @@ const OrderPage = () => {
     setQuantity(opt.unit === "kg" ? 1 : 1);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedOption || !name || !phone) {
       toast.error("Veuillez remplir tous les champs");
       return;
@@ -59,7 +59,7 @@ const OrderPage = () => {
       total,
     };
 
-    addOrder(order);
+    await addOrder(order);
     toast.success("Commande envoyée ! 🎉");
     navigate("/my-orders");
   };
