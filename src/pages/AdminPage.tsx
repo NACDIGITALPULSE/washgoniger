@@ -49,10 +49,17 @@ const AdminPage = () => {
     checkAuth();
   }, [navigate]);
 
-  const buildWhatsAppUrl = (phone: string, serviceName: string, clientName: string, total: number) => {
-    const cleanPhone = phone.replace(/\D/g, "");
+  const ADMIN_WHATSAPP = "22788082987";
+
+  const buildAdminWhatsAppUrl = (serviceName: string, clientName: string, clientPhone: string, total: number, location: string) => {
+    const message = `🔔 *Nouvelle commande WashGo !*\n\n📋 Service: *${serviceName}*\n👤 Client: *${clientName}*\n📞 Tél: ${clientPhone}\n📍 Lieu: ${location === "domicile" ? "À domicile" : "Sur place"}\n💰 Total: *${total.toLocaleString("fr-FR")} FCFA*\n\n⏰ ${new Date().toLocaleString("fr-FR")}`;
+    return `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(message)}`;
+  };
+
+  const buildClientWhatsAppUrl = (clientPhone: string, clientName: string, serviceName: string, total: number) => {
+    const cleanPhone = clientPhone.replace(/\D/g, "");
     const fullPhone = cleanPhone.startsWith("227") ? cleanPhone : `227${cleanPhone}`;
-    const message = `Bonjour ${clientName}, votre commande *${serviceName}* d'un montant de *${total.toLocaleString("fr-FR")} FCFA* a bien été reçue. Merci pour votre confiance ! 🚗✨ — CleanCar Niger`;
+    const message = `Bonjour ${clientName}, votre commande *${serviceName}* d'un montant de *${total.toLocaleString("fr-FR")} FCFA* a bien été reçue. Merci pour votre confiance ! 🚗✨ — WashGo Niger`;
     return `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
   };
 
@@ -65,7 +72,7 @@ const AdminPage = () => {
         { event: 'INSERT', schema: 'public', table: 'orders' },
         (payload) => {
           const newOrder = payload.new as any;
-          const whatsappUrl = buildWhatsAppUrl(newOrder.client_phone, newOrder.service_name, newOrder.client_name, Number(newOrder.total));
+          const whatsappUrl = buildAdminWhatsAppUrl(newOrder.service_name, newOrder.client_name, newOrder.client_phone, Number(newOrder.total), newOrder.location);
           toast.success(`🔔 Nouvelle commande !`, {
             description: `${newOrder.service_name} — ${newOrder.client_name} (${Number(newOrder.total).toLocaleString("fr-FR")} FCFA)`,
             duration: 15000,
@@ -74,7 +81,6 @@ const AdminPage = () => {
               onClick: () => window.open(whatsappUrl, "_blank"),
             },
           });
-          // Play notification sound
           try {
             const audio = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGczJj+QxN3LdUMtQYC02NZ+TDM+eLHX2YlVODx0rNPXkFw7OnSu1deMYDs5c7DV2JRgPDlxr9bZlWI9OXKw1tqVYj45c7HX25ViPjp1s9nclmM/O3i22d2YZD87d7bZ3pllQDt4t9remWVAO3i42d+ZZUA8eLna35plQDx5utremGVAPHm62t+ZZUA8ebrb35plQDx5u9vfmmZAPXm729+aZkA9ebzc4JtmQD15vNzgm2ZAPnm83OCbZ0A+eb3d4JxnQD55vd3gnGdAPnm93eCcZ0A+eb3d4JxnQD55vd3gnGdAPnm93eCcaEA=");
             audio.volume = 0.5;
