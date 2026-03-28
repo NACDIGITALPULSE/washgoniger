@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ServiceOption, Order } from "@/lib/services";
+import { ServiceOption, Order, SelectedOptionWithQty } from "@/lib/services";
 import { useAppState } from "@/lib/store";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale } from "lucide-react";
+import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation } from "lucide-react";
 import { toast } from "sonner";
+
+const ADMIN_WHATSAPP = "22788082987";
 
 const OrderPage = () => {
   const { serviceId } = useParams();
@@ -16,41 +18,84 @@ const OrderPage = () => {
   const { addOrder, services } = useAppState();
   const service = services.find((s) => s.id === serviceId);
 
-  const [selectedOption, setSelectedOption] = useState<ServiceOption | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  const [selectedOptions, setSelectedOptions] = useState<Map<string, SelectedOptionWithQty>>(new Map());
   const [location, setLocation] = useState<"sur_place" | "domicile">("sur_place");
   const [payment, setPayment] = useState<Order["payment"]>("cash");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   if (!service) return <div className="p-8 text-center text-muted-foreground">Service introuvable</div>;
 
-  const isKg = selectedOption?.unit === "kg";
-  const total = selectedOption ? selectedOption.price * quantity : 0;
+  const toggleOption = (opt: ServiceOption) => {
+    setSelectedOptions((prev) => {
+      const next = new Map(prev);
+      if (next.has(opt.id)) {
+        next.delete(opt.id);
+      } else {
+        next.set(opt.id, { option: opt, quantity: opt.unit === "kg" ? 1 : 1 });
+      }
+      return next;
+    });
+  };
 
-  const handleSelectOption = (opt: ServiceOption) => {
-    setSelectedOption(opt);
-    setQuantity(opt.unit === "kg" ? 1 : 1);
+  const updateQty = (optId: string, delta: number) => {
+    setSelectedOptions((prev) => {
+      const next = new Map(prev);
+      const item = next.get(optId);
+      if (!item) return prev;
+      const isKg = item.option.unit === "kg";
+      const step = isKg ? 0.5 : 1;
+      const min = isKg ? 0.5 : 1;
+      const newQty = Math.max(min, item.quantity + delta * step);
+      next.set(optId, { ...item, quantity: newQty });
+      return next;
+    });
+  };
+
+  const total = Array.from(selectedOptions.values()).reduce(
+    (sum, { option, quantity }) => sum + option.price * quantity, 0
+  );
+
+  const shareLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("La géolocalisation n'est pas disponible");
+      return;
+    }
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        const message = `📍 Voici ma position pour la commande *WashGo Niger* :\n${mapUrl}\n\nNom: ${name || "Client"}\nTél: ${phone}`;
+        window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(message)}`, "_blank");
+        setGettingLocation(false);
+      },
+      () => {
+        toast.error("Impossible d'obtenir la position");
+        setGettingLocation(false);
+      }
+    );
   };
 
   const handleSubmit = async () => {
-    if (!selectedOption || !name || !phone) {
-      toast.error("Veuillez remplir tous les champs");
+    if (selectedOptions.size === 0 || !name || !phone) {
+      toast.error("Veuillez remplir tous les champs et choisir au moins une option");
       return;
     }
-    if (quantity <= 0) {
-      toast.error("La quantité doit être supérieure à 0");
-      return;
-    }
+
+    const optionsArray = Array.from(selectedOptions.values());
+    const firstOpt = optionsArray[0];
 
     const order: Order = {
       id: crypto.randomUUID(),
       clientName: name,
       clientPhone: phone,
       service,
-      selectedOption,
-      quantity,
+      selectedOption: firstOpt.option,
+      selectedOptions: optionsArray,
+      quantity: firstOpt.quantity,
       location,
       address: location === "domicile" ? address : undefined,
       payment,
@@ -65,113 +110,102 @@ const OrderPage = () => {
     navigate("/order-confirmation", { state: { order } });
   };
 
+  const paymentMethods = [
+    { id: "cash" as const, label: "Cash", emoji: "💵" },
+    { id: "airtel_money" as const, label: "Airtel Money", emoji: "📱" },
+    { id: "moov" as const, label: "Moov Money", emoji: "📱" },
+    { id: "zamani" as const, label: "Zamani", emoji: "📱" },
+    { id: "nita" as const, label: "Nita", emoji: "💳" },
+    { id: "amanata" as const, label: "Amanata", emoji: "💳" },
+  ];
+
   return (
     <div className="min-h-screen pb-24 bg-background">
       <PageHeader title={`${service.icon} ${service.name}`} subtitle={service.description} />
       <div className="container max-w-lg mx-auto px-4 py-6 space-y-6">
-        {/* Options */}
+        {/* Options - Multi select */}
         <section>
-          <h3 className="font-bold text-foreground mb-3 text-sm uppercase tracking-wide">Choisir une option</h3>
+          <h3 className="font-bold text-foreground mb-1 text-sm uppercase tracking-wide">Choisir vos options</h3>
+          <p className="text-xs text-muted-foreground mb-3">Vous pouvez sélectionner plusieurs options</p>
           <div className="space-y-2">
-            {service.options.map((opt) => (
-              <motion.button
-                key={opt.id}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => handleSelectOption(opt)}
-                className={`w-full rounded-2xl p-4 text-left transition-all border-2 ${
-                  selectedOption?.id === opt.id
-                    ? "border-primary bg-primary/5 shadow-md"
-                    : "border-transparent glass-card"
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    {selectedOption?.id === opt.id ? (
-                      <CheckCircle2 className="w-5 h-5 text-secondary flex-shrink-0" />
-                    ) : (
-                      <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex-shrink-0" />
-                    )}
-                    <div>
-                      <div className="font-semibold text-foreground flex items-center gap-1.5">
-                        {opt.name}
-                        {opt.unit === "kg" && <Scale className="w-3.5 h-3.5 text-secondary" />}
+            {service.options.map((opt) => {
+              const selected = selectedOptions.has(opt.id);
+              const item = selectedOptions.get(opt.id);
+              return (
+                <div key={opt.id}>
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => toggleOption(opt)}
+                    className={`w-full rounded-2xl p-4 text-left transition-all border-2 ${
+                      selected ? "border-primary bg-primary/5 shadow-md" : "border-transparent glass-card"
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        {selected ? (
+                          <CheckCircle2 className="w-5 h-5 text-secondary flex-shrink-0" />
+                        ) : (
+                          <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex-shrink-0" />
+                        )}
+                        <div>
+                          <div className="font-semibold text-foreground flex items-center gap-1.5">
+                            {opt.name}
+                            {opt.unit === "kg" && <Scale className="w-3.5 h-3.5 text-secondary" />}
+                          </div>
+                          {opt.description && (
+                            <div className="text-xs text-muted-foreground mt-0.5">{opt.description}</div>
+                          )}
+                        </div>
                       </div>
-                      {opt.description && (
-                        <div className="text-xs text-muted-foreground mt-0.5">{opt.description}</div>
-                      )}
+                      <span className="font-bold text-primary text-sm">
+                        {opt.price.toLocaleString("fr-FR")} FCFA
+                        {opt.unit === "kg" && <span className="text-muted-foreground font-normal">/kg</span>}
+                      </span>
                     </div>
-                  </div>
-                  <span className="font-bold text-primary text-sm">
-                    {opt.price.toLocaleString("fr-FR")} FCFA
-                    {opt.unit === "kg" && <span className="text-muted-foreground font-normal">/kg</span>}
-                  </span>
+                  </motion.button>
+
+                  {/* Quantity for selected option */}
+                  <AnimatePresence>
+                    {selected && item && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-1 mb-2"
+                      >
+                        <div className="glass-card rounded-xl p-3 flex items-center justify-between ml-8">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); updateQty(opt.id, -1); }}
+                            className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="text-center">
+                            <div className="text-xl font-extrabold text-foreground">{item.quantity}</div>
+                            <div className="text-[10px] text-muted-foreground">
+                              {opt.unit === "kg" ? "kg" : `pièce${item.quantity > 1 ? "s" : ""}`}
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); updateQty(opt.id, 1); }}
+                            className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="text-right ml-3">
+                            <div className="text-sm font-bold text-primary">
+                              {(opt.price * item.quantity).toLocaleString("fr-FR")} F
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-              </motion.button>
-            ))}
+              );
+            })}
           </div>
         </section>
-
-        {/* Quantity for kg */}
-        <AnimatePresence>
-          {selectedOption && isKg && (
-            <motion.section
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              <h3 className="font-bold text-foreground mb-3 text-sm uppercase tracking-wide">⚖️ Poids (kg)</h3>
-              <div className="glass-card rounded-2xl p-4 flex items-center justify-between">
-                <button
-                  onClick={() => setQuantity(Math.max(0.5, quantity - 0.5))}
-                  className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <div className="text-center">
-                  <div className="text-3xl font-extrabold text-foreground">{quantity}</div>
-                  <div className="text-xs text-muted-foreground">kilogramme{quantity > 1 ? "s" : ""}</div>
-                </div>
-                <button
-                  onClick={() => setQuantity(quantity + 0.5)}
-                  className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.section>
-          )}
-        </AnimatePresence>
-
-        {/* Quantity for pieces */}
-        <AnimatePresence>
-          {selectedOption && !isKg && (
-            <motion.section
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-            >
-              <h3 className="font-bold text-foreground mb-3 text-sm uppercase tracking-wide">🔢 Quantité</h3>
-              <div className="glass-card rounded-2xl p-4 flex items-center justify-between">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <div className="text-center">
-                  <div className="text-3xl font-extrabold text-foreground">{quantity}</div>
-                  <div className="text-xs text-muted-foreground">pièce{quantity > 1 ? "s" : ""}</div>
-                </div>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.section>
-          )}
-        </AnimatePresence>
 
         {/* Location */}
         <section>
@@ -194,11 +228,21 @@ const OrderPage = () => {
           </div>
           <AnimatePresence>
             {location === "domicile" && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-3">
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-3 space-y-2">
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                   <Input placeholder="Votre adresse à Niamey" value={address} onChange={(e) => setAddress(e.target.value)} className="pl-10 rounded-xl" />
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full rounded-xl text-xs"
+                  onClick={shareLocation}
+                  disabled={gettingLocation}
+                >
+                  <Navigation className="w-3.5 h-3.5 mr-1.5" />
+                  {gettingLocation ? "Récupération..." : "📍 Partager ma position par WhatsApp"}
+                </Button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -207,22 +251,18 @@ const OrderPage = () => {
         {/* Payment */}
         <section>
           <h3 className="font-bold text-foreground mb-3 text-sm uppercase tracking-wide">💳 Paiement</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {([
-              { id: "cash" as const, label: "Cash", emoji: "💵" },
-              { id: "airtel_money" as const, label: "Airtel Money", emoji: "📱" },
-              { id: "moov" as const, label: "Moov Money", emoji: "📱" },
-              { id: "zamani" as const, label: "Zamani", emoji: "📱" },
-            ]).map((p) => (
+          <p className="text-xs text-muted-foreground mb-2">Nita & Amanata via le <span className="font-semibold">+227 88 08 29 87</span></p>
+          <div className="grid grid-cols-3 gap-2">
+            {paymentMethods.map((p) => (
               <button
                 key={p.id}
                 onClick={() => setPayment(p.id)}
-                className={`rounded-2xl p-4 text-center transition-all border-2 ${
+                className={`rounded-2xl p-3 text-center transition-all border-2 ${
                   payment === p.id ? "border-primary bg-primary/5 shadow-md" : "border-transparent glass-card"
                 }`}
               >
-                <div className="text-xl mb-1">{p.emoji}</div>
-                <div className="text-xs font-semibold text-foreground">{p.label}</div>
+                <div className="text-lg mb-0.5">{p.emoji}</div>
+                <div className="text-[10px] font-semibold text-foreground">{p.label}</div>
               </button>
             ))}
           </div>
@@ -245,13 +285,15 @@ const OrderPage = () => {
 
         {/* Submit */}
         <AnimatePresence>
-          {selectedOption && (
+          {selectedOptions.size > 0 && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <div className="glass-card rounded-2xl p-5 mb-4 space-y-2">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{selectedOption.name} × {quantity}{isKg ? " kg" : ""}</span>
-                  <span>{selectedOption.price.toLocaleString("fr-FR")} FCFA{isKg ? "/kg" : ""}</span>
-                </div>
+                {Array.from(selectedOptions.values()).map(({ option, quantity }) => (
+                  <div key={option.id} className="flex justify-between text-sm text-muted-foreground">
+                    <span>{option.name} × {quantity}{option.unit === "kg" ? " kg" : ""}</span>
+                    <span>{(option.price * quantity).toLocaleString("fr-FR")} FCFA</span>
+                  </div>
+                ))}
                 <div className="flex justify-between font-extrabold text-lg text-foreground pt-2 border-t border-border">
                   <span>Total</span>
                   <span className="text-gradient">{total.toLocaleString("fr-FR")} FCFA</span>

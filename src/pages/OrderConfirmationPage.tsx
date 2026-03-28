@@ -1,8 +1,9 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle2, MessageCircle, Home, ClipboardList } from "lucide-react";
+import { CheckCircle2, MessageCircle, Home, ClipboardList, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Order } from "@/lib/services";
+import { toast } from "sonner";
 
 const ADMIN_WHATSAPP = "22788082987";
 
@@ -16,14 +17,35 @@ const OrderConfirmationPage = () => {
     return null;
   }
 
+  const optionsList = order.selectedOptions && order.selectedOptions.length > 0
+    ? order.selectedOptions
+    : [{ option: order.selectedOption, quantity: order.quantity }];
+
   const shareOnWhatsApp = () => {
-    const message = `✅ J'ai passé une commande chez *WashGo Niger* !\n\n📋 ${order.service.name} — ${order.selectedOption.name}\n💰 ${order.total.toLocaleString("fr-FR")} FCFA\n📍 ${order.location === "domicile" ? "À domicile" : "Sur place"}\n\nContactez-les : wa.me/${ADMIN_WHATSAPP}`;
+    const optionsText = optionsList.map(o => `${o.option.name} ×${o.quantity}`).join(", ");
+    const message = `✅ J'ai passé une commande chez *WashGo Niger* !\n\n📋 ${order.service.name} — ${optionsText}\n💰 ${order.total.toLocaleString("fr-FR")} FCFA\n📍 ${order.location === "domicile" ? "À domicile" : "Sur place"}\n\nContactez-les : wa.me/${ADMIN_WHATSAPP}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   const contactAdmin = () => {
     const message = `Bonjour, je viens de passer une commande *${order.service.name}* (${order.total.toLocaleString("fr-FR")} FCFA). Mon nom est ${order.clientName}. Merci !`;
     window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(message)}`, "_blank");
+  };
+
+  const shareLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("La géolocalisation n'est pas disponible");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        const message = `📍 Ma position pour la commande *${order.service.name}* :\n${mapUrl}\n\nNom: ${order.clientName}\nTél: ${order.clientPhone}`;
+        window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(message)}`, "_blank");
+      },
+      () => toast.error("Impossible d'obtenir la position")
+    );
   };
 
   return (
@@ -52,7 +74,7 @@ const OrderConfirmationPage = () => {
         transition={{ delay: 0.4 }}
         className="text-muted-foreground text-center text-sm mb-8 max-w-xs"
       >
-        Votre commande a été reçue avec succès. Nous vous contacterons très bientôt.
+        Votre commande a été reçue. Vous recevrez une notification quand elle sera validée.
       </motion.p>
 
       <motion.div
@@ -65,14 +87,12 @@ const OrderConfirmationPage = () => {
           <span className="text-muted-foreground">Service</span>
           <span className="font-semibold text-foreground">{order.service.icon} {order.service.name}</span>
         </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Option</span>
-          <span className="font-semibold text-foreground">{order.selectedOption.name}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Quantité</span>
-          <span className="font-semibold text-foreground">{order.quantity}{order.selectedOption.unit === "kg" ? " kg" : ""}</span>
-        </div>
+        {optionsList.map(({ option, quantity }) => (
+          <div key={option.id} className="flex justify-between text-sm">
+            <span className="text-muted-foreground">{option.name} × {quantity}{option.unit === "kg" ? " kg" : ""}</span>
+            <span className="font-semibold text-foreground">{(option.price * quantity).toLocaleString("fr-FR")} F</span>
+          </div>
+        ))}
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Lieu</span>
           <span className="font-semibold text-foreground">{order.location === "domicile" ? "🏠 Domicile" : "🏪 Sur place"}</span>
@@ -96,6 +116,17 @@ const OrderConfirmationPage = () => {
           <MessageCircle className="w-5 h-5 mr-2" />
           Contacter sur WhatsApp
         </Button>
+
+        {order.location === "domicile" && (
+          <Button
+            variant="outline"
+            onClick={shareLocation}
+            className="w-full rounded-2xl h-12"
+          >
+            <Navigation className="w-4 h-4 mr-2" />
+            📍 Partager ma position
+          </Button>
+        )}
 
         <Button
           variant="outline"
