@@ -22,6 +22,7 @@ export interface SelectedOptionWithQty {
 
 export interface Order {
   id: string;
+  orderNumber?: string;
   clientName: string;
   clientPhone: string;
   service: Service;

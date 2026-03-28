@@ -35,6 +35,7 @@ const dbRowToService = (row: any): Service => ({
 
 const dbRowToOrder = (row: any): Order => ({
   id: row.id,
+  orderNumber: row.order_number || undefined,
   clientName: row.client_name,
   clientPhone: row.client_phone,
   service: { id: row.service_id, name: row.service_name, icon: row.service_icon, category: "auto", description: "", options: [] },
@@ -88,6 +89,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const { error } = await supabase.from("orders").insert({
       id: order.id,
+      order_number: order.orderNumber || null,
       client_name: order.clientName,
       client_phone: order.clientPhone,
       service_id: order.service.id,

@@ -22,6 +22,7 @@ export type Database = {
           created_at: string
           id: string
           location: string
+          order_number: string | null
           payment: string
           quantity: number
           selected_option: Json
@@ -38,6 +39,7 @@ export type Database = {
           created_at?: string
           id: string
           location?: string
+          order_number?: string | null
           payment?: string
           quantity?: number
           selected_option: Json
@@ -54,6 +56,7 @@ export type Database = {
           created_at?: string
           id?: string
           location?: string
+          order_number?: string | null
           payment?: string
           quantity?: number
           selected_option?: Json
