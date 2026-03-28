@@ -82,6 +82,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchOrders]);
 
   const addOrder = async (order: Order) => {
+    const selectedOptionData = order.selectedOptions && order.selectedOptions.length > 0
+      ? { ...order.selectedOption, options: order.selectedOptions }
+      : order.selectedOption;
+
     const { error } = await supabase.from("orders").insert({
       id: order.id,
       client_name: order.clientName,
@@ -89,7 +93,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       service_id: order.service.id,
       service_name: order.service.name,
       service_icon: order.service.icon,
-      selected_option: order.selectedOption as any,
+      selected_option: selectedOptionData as any,
       quantity: order.quantity,
       location: order.location,
       address: order.address || null,
