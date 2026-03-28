@@ -15,16 +15,22 @@ export interface ServiceOption {
   description?: string;
 }
 
+export interface SelectedOptionWithQty {
+  option: ServiceOption;
+  quantity: number;
+}
+
 export interface Order {
   id: string;
   clientName: string;
   clientPhone: string;
   service: Service;
-  selectedOption: ServiceOption;
+  selectedOption: ServiceOption; // kept for backward compat (first option)
+  selectedOptions?: SelectedOptionWithQty[]; // multi-option
   quantity: number;
   location: "sur_place" | "domicile";
   address?: string;
-  payment: "cash" | "airtel_money" | "moov" | "zamani";
+  payment: "cash" | "airtel_money" | "moov" | "zamani" | "nita" | "amanata";
   status: "pending" | "accepted" | "in_progress" | "completed" | "cancelled";
   createdAt: Date;
   total: number;
