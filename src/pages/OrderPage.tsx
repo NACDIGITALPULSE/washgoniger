@@ -88,8 +88,15 @@ const OrderPage = () => {
     const optionsArray = Array.from(selectedOptions.values());
     const firstOpt = optionsArray[0];
 
+    // Generate order number: WG-YYYYMMDD-XXXX
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+    const seq = Math.floor(1000 + Math.random() * 9000);
+    const orderNumber = `WG-${dateStr}-${seq}`;
+
     const order: Order = {
       id: crypto.randomUUID(),
+      orderNumber,
       clientName: name,
       clientPhone: phone,
       service,
@@ -100,12 +107,36 @@ const OrderPage = () => {
       address: location === "domicile" ? address : undefined,
       payment,
       status: "pending",
-      createdAt: new Date(),
+      createdAt: now,
       total,
     };
 
     await addOrder(order);
     localStorage.setItem("washgo_phone", phone);
+
+    // Auto-send WhatsApp notification to admin
+    const optionsText = optionsArray.map(o => `${o.option.name} ×${o.quantity}`).join(", ");
+    const locationText = location === "domicile" ? `🏠 Domicile${address ? ` — ${address}` : ""}` : "🏪 Sur place";
+    const payLabel = paymentMethods.find(p => p.id === payment)?.label || payment;
+    const adminMsg = `🧾 *Nouvelle commande WashGo Niger*\n\n📋 N° ${orderNumber}\n👤 ${name}\n📞 ${phone}\n\n🔧 ${service.icon} ${service.name}\n${optionsText}\n💰 *${total.toLocaleString("fr-FR")} FCFA*\n📍 ${locationText}\n💳 ${payLabel}`;
+    window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(adminMsg)}`, "_blank");
+
+    // If domicile, also share location automatically
+    if (location === "domicile" && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+          const locMsg = `📍 *Position pour commande ${orderNumber}*\n${mapUrl}\n\nNom: ${name}\nTél: ${phone}`;
+          // Small delay to avoid popup blocker
+          setTimeout(() => {
+            window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(locMsg)}`, "_blank");
+          }, 1500);
+        },
+        () => {} // silent fail
+      );
+    }
+
     toast.success("Commande envoyée ! 🎉");
     navigate("/order-confirmation", { state: { order } });
   };
