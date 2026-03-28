@@ -89,6 +89,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const { error } = await supabase.from("orders").insert({
       id: order.id,
+      order_number: order.orderNumber || null,
       client_name: order.clientName,
       client_phone: order.clientPhone,
       service_id: order.service.id,
