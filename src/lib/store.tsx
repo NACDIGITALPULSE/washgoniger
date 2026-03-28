@@ -1,4 +1,4 @@
-import { Order, Service, DEFAULT_SERVICES } from "@/lib/services";
+import { Order, Service, DEFAULT_SERVICES, SelectedOptionWithQty } from "@/lib/services";
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
