@@ -35,6 +35,7 @@ const dbRowToService = (row: any): Service => ({
 
 const dbRowToOrder = (row: any): Order => ({
   id: row.id,
+  orderNumber: row.order_number || undefined,
   clientName: row.client_name,
   clientPhone: row.client_phone,
   service: { id: row.service_id, name: row.service_name, icon: row.service_icon, category: "auto", description: "", options: [] },
