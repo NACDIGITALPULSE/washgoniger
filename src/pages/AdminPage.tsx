@@ -26,7 +26,7 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 const AdminPage = () => {
   const { orders, updateOrderStatus, services, updateService, addService, removeService } = useAppState();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"dashboard" | "orders" | "services">("dashboard");
+  const [tab, setTab] = useState<"dashboard" | "orders" | "services" | "promos">("dashboard");
 
   useEffect(() => {
     const checkAuth = async () => {
