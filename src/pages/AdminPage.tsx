@@ -524,4 +524,127 @@ const AddServiceForm = ({ onAdd, onCancel }: { onAdd: (s: Service) => void; onCa
   );
 };
 
+// ── Promos Management Tab ──
+const PromosTab = () => {
+  const [promos, setPromos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [code, setCode] = useState("");
+  const [discountType, setDiscountType] = useState<"percentage" | "fixed">("percentage");
+  const [discountValue, setDiscountValue] = useState("");
+  const [minOrder, setMinOrder] = useState("");
+  const [maxUses, setMaxUses] = useState("");
+
+  const fetchPromos = async () => {
+    const { data } = await supabase.from("promo_codes").select("*").order("created_at", { ascending: false });
+    setPromos(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchPromos(); }, []);
+
+  const addPromo = async () => {
+    if (!code.trim() || !discountValue) { toast.error("Code et valeur requis"); return; }
+    const { error } = await supabase.from("promo_codes").insert({
+      code: code.trim().toUpperCase(),
+      discount_type: discountType,
+      discount_value: Number(discountValue),
+      min_order: Number(minOrder) || 0,
+      max_uses: maxUses ? Number(maxUses) : null,
+    });
+    if (error) {
+      toast.error(error.message.includes("duplicate") ? "Ce code existe déjà" : "Erreur");
+      return;
+    }
+    toast.success("Code promo créé !");
+    setShowAdd(false);
+    setCode(""); setDiscountValue(""); setMinOrder(""); setMaxUses("");
+    fetchPromos();
+  };
+
+  const toggleActive = async (id: string, active: boolean) => {
+    await supabase.from("promo_codes").update({ active: !active }).eq("id", id);
+    fetchPromos();
+  };
+
+  const deletePromo = async (id: string) => {
+    await supabase.from("promo_codes").delete().eq("id", id);
+    toast.success("Code supprimé");
+    fetchPromos();
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="font-bold text-foreground">Codes promo</h3>
+        <Button variant="hero" size="sm" className="rounded-xl" onClick={() => setShowAdd(!showAdd)}>
+          <Plus className="w-4 h-4" /> Ajouter
+        </Button>
+      </div>
+
+      <AnimatePresence>
+        {showAdd && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="glass-card rounded-2xl p-4 space-y-3">
+            <Input placeholder="CODE (ex: WASH20)" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className="rounded-xl uppercase font-bold" />
+            <div className="grid grid-cols-2 gap-2">
+              <select value={discountType} onChange={(e) => setDiscountType(e.target.value as any)} className="rounded-xl text-sm bg-muted text-foreground px-3 py-2.5 border border-border">
+                <option value="percentage">% Pourcentage</option>
+                <option value="fixed">FCFA Montant fixe</option>
+              </select>
+              <Input placeholder={discountType === "percentage" ? "Ex: 20" : "Ex: 1000"} value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} className="rounded-xl" type="number" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input placeholder="Min commande (FCFA)" value={minOrder} onChange={(e) => setMinOrder(e.target.value)} className="rounded-xl" type="number" />
+              <Input placeholder="Max utilisations" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} className="rounded-xl" type="number" />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="hero" size="sm" className="flex-1 rounded-xl" onClick={addPromo}>
+                <Plus className="w-4 h-4" /> Créer
+              </Button>
+              <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setShowAdd(false)}>Annuler</Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {loading ? (
+        <div className="text-center py-8 text-muted-foreground text-sm">Chargement...</div>
+      ) : promos.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-4xl mb-3">🏷️</div>
+          <p className="text-muted-foreground text-sm">Aucun code promo</p>
+        </div>
+      ) : (
+        promos.map((p) => (
+          <div key={p.id} className="glass-card rounded-2xl p-4">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <div className="font-bold text-foreground text-sm flex items-center gap-2">
+                  🏷️ {p.code}
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${p.active ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}`}>
+                    {p.active ? "Actif" : "Inactif"}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  -{p.discount_type === "percentage" ? `${p.discount_value}%` : `${Number(p.discount_value).toLocaleString("fr-FR")} FCFA`}
+                  {p.min_order > 0 && ` • Min ${Number(p.min_order).toLocaleString("fr-FR")} F`}
+                  {p.max_uses && ` • ${p.used_count}/${p.max_uses} utilisations`}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2 border-t border-border">
+              <Button variant="outline" size="sm" className="rounded-xl flex-1 text-xs" onClick={() => toggleActive(p.id, p.active)}>
+                {p.active ? "Désactiver" : "Activer"}
+              </Button>
+              <Button variant="outline" size="sm" className="rounded-xl text-xs text-destructive" onClick={() => deletePromo(p.id)}>
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+        ))
+      )}
+    </motion.div>
+  );
+};
+
 export default AdminPage;
