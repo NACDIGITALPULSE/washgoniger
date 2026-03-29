@@ -148,11 +148,12 @@ const AdminPage = () => {
             { key: "dashboard" as const, label: "📊 Stats" },
             { key: "orders" as const, label: "📋 Commandes" },
             { key: "services" as const, label: "⚙️ Services" },
+            { key: "promos" as const, label: "🏷️ Promos" },
           ]).map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                 tab === t.key ? "hero-gradient text-primary-foreground shadow-md" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -165,6 +166,7 @@ const AdminPage = () => {
           {tab === "dashboard" && <DashboardTab key="dash" orders={orders} totalRevenue={totalRevenue} />}
           {tab === "orders" && <OrdersTab key="ord" orders={orders} updateOrderStatus={updateOrderStatus} />}
           {tab === "services" && <ServicesTab key="svc" services={services} updateService={updateService} addService={addService} removeService={removeService} />}
+          {tab === "promos" && <PromosTab key="promo" />}
         </AnimatePresence>
       </div>
     </div>
