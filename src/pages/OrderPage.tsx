@@ -58,9 +58,62 @@ const OrderPage = () => {
     });
   };
 
-  const total = Array.from(selectedOptions.values()).reduce(
+  const subtotal = Array.from(selectedOptions.values()).reduce(
     (sum, { option, quantity }) => sum + option.price * quantity, 0
   );
+
+  const discount = appliedPromo
+    ? appliedPromo.discount_type === "percentage"
+      ? Math.round(subtotal * appliedPromo.discount_value / 100)
+      : Math.min(appliedPromo.discount_value, subtotal)
+    : 0;
+
+  const total = subtotal - discount;
+
+  const applyPromoCode = async () => {
+    if (!promoInput.trim()) return;
+    setPromoLoading(true);
+    const { data, error } = await supabase
+      .from("promo_codes")
+      .select("*")
+      .eq("code", promoInput.trim().toUpperCase())
+      .eq("active", true)
+      .maybeSingle();
+
+    if (error || !data) {
+      toast.error("Code promo invalide");
+      setAppliedPromo(null);
+      setPromoLoading(false);
+      return;
+    }
+
+    if (data.max_uses && data.used_count >= data.max_uses) {
+      toast.error("Ce code promo a expiré (utilisation max atteinte)");
+      setPromoLoading(false);
+      return;
+    }
+
+    if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      toast.error("Ce code promo a expiré");
+      setPromoLoading(false);
+      return;
+    }
+
+    if (data.min_order > subtotal) {
+      toast.error(`Commande minimum de ${data.min_order.toLocaleString("fr-FR")} FCFA requise`);
+      setPromoLoading(false);
+      return;
+    }
+
+    setAppliedPromo(data as PromoCode);
+    toast.success(`Code promo appliqué ! -${data.discount_type === "percentage" ? data.discount_value + "%" : data.discount_value.toLocaleString("fr-FR") + " FCFA"}`);
+    setPromoLoading(false);
+  };
+
+  const removePromo = () => {
+    setAppliedPromo(null);
+    setPromoInput("");
+  };
 
   const shareLocation = () => {
     if (!navigator.geolocation) {
