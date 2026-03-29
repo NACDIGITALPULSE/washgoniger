@@ -379,6 +379,39 @@ const OrderPage = () => {
           </div>
         </section>
 
+        {/* Promo Code */}
+        <section>
+          <h3 className="font-bold text-foreground mb-3 text-sm uppercase tracking-wide">🏷️ Code promo</h3>
+          {appliedPromo ? (
+            <div className="glass-card rounded-xl p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Tag className="w-4 h-4 text-success" />
+                <span className="font-bold text-success text-sm">{appliedPromo.code}</span>
+                <span className="text-xs text-muted-foreground">
+                  (-{appliedPromo.discount_type === "percentage" ? `${appliedPromo.discount_value}%` : `${appliedPromo.discount_value.toLocaleString("fr-FR")} F`})
+                </span>
+              </div>
+              <button onClick={removePromo} className="text-xs text-destructive font-semibold">Retirer</button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Tag className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Entrer un code promo"
+                  value={promoInput}
+                  onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                  className="pl-10 rounded-xl uppercase"
+                  onKeyDown={(e) => e.key === "Enter" && applyPromoCode()}
+                />
+              </div>
+              <Button variant="outline" className="rounded-xl" onClick={applyPromoCode} disabled={promoLoading}>
+                {promoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Appliquer"}
+              </Button>
+            </div>
+          )}
+        </section>
+
         {/* Submit */}
         <AnimatePresence>
           {selectedOptions.size > 0 && (
@@ -390,6 +423,18 @@ const OrderPage = () => {
                     <span>{(option.price * quantity).toLocaleString("fr-FR")} FCFA</span>
                   </div>
                 ))}
+                {discount > 0 && (
+                  <>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Sous-total</span>
+                      <span>{subtotal.toLocaleString("fr-FR")} FCFA</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-success font-semibold">
+                      <span>🏷️ Réduction ({appliedPromo?.code})</span>
+                      <span>-{discount.toLocaleString("fr-FR")} FCFA</span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between font-extrabold text-lg text-foreground pt-2 border-t border-border">
                   <span>Total</span>
                   <span className="text-gradient">{total.toLocaleString("fr-FR")} FCFA</span>
