@@ -26,6 +26,9 @@ const OrderPage = () => {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
 
   if (!service) return <div className="p-8 text-center text-muted-foreground">Service introuvable</div>;
 
