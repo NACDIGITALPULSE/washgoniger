@@ -194,7 +194,6 @@ const OrderConfirmationPage = () => {
 
       {/* Invoice card */}
       <motion.div
-        ref={invoiceRef}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
@@ -236,25 +235,17 @@ const OrderConfirmationPage = () => {
         transition={{ delay: 0.6 }}
         className="w-full max-w-sm space-y-3"
       >
-        {/* Download & share invoice */}
-        <div className="grid grid-cols-2 gap-3">
-          <Button onClick={downloadInvoice} variant="outline" className="rounded-2xl h-12">
-            <Download className="w-4 h-4 mr-1.5" />
-            Télécharger
-          </Button>
-          <Button onClick={shareInvoiceWhatsApp} className="rounded-2xl h-12 bg-[#25D366] hover:bg-[#20BD5A] text-white">
-            <Share2 className="w-4 h-4 mr-1.5" />
-            Envoyer facture
-          </Button>
-        </div>
+        <Button onClick={downloadInvoicePDF} variant="outline" className="w-full rounded-2xl h-12">
+          <Download className="w-4 h-4 mr-1.5" />
+          Télécharger la facture PDF
+        </Button>
 
         <Button
           onClick={contactAdmin}
-          variant="outline"
-          className="w-full rounded-2xl h-12"
+          className="w-full rounded-2xl h-12 bg-[#25D366] hover:bg-[#20BD5A] text-white"
         >
           <MessageCircle className="w-5 h-5 mr-2" />
-          Contacter sur WhatsApp
+          Envoyer la facture par WhatsApp
         </Button>
 
         {order.location === "domicile" && (
