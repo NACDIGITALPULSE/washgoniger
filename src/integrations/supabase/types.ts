@@ -20,10 +20,12 @@ export type Database = {
           client_name: string
           client_phone: string
           created_at: string
+          discount: number | null
           id: string
           location: string
           order_number: string | null
           payment: string
+          promo_code: string | null
           quantity: number
           selected_option: Json
           service_icon: string
@@ -37,10 +39,12 @@ export type Database = {
           client_name: string
           client_phone: string
           created_at?: string
+          discount?: number | null
           id: string
           location?: string
           order_number?: string | null
           payment?: string
+          promo_code?: string | null
           quantity?: number
           selected_option: Json
           service_icon?: string
@@ -54,10 +58,12 @@ export type Database = {
           client_name?: string
           client_phone?: string
           created_at?: string
+          discount?: number | null
           id?: string
           location?: string
           order_number?: string | null
           payment?: string
+          promo_code?: string | null
           quantity?: number
           selected_option?: Json
           service_icon?: string
@@ -65,6 +71,45 @@ export type Database = {
           service_name?: string
           status?: string
           total?: number
+        }
+        Relationships: []
+      }
+      promo_codes: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          max_uses: number | null
+          min_order: number
+          used_count: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          min_order?: number
+          used_count?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          min_order?: number
+          used_count?: number
         }
         Relationships: []
       }

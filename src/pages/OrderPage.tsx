@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ServiceOption, Order, SelectedOptionWithQty } from "@/lib/services";
+import { ServiceOption, Order, SelectedOptionWithQty, PromoCode } from "@/lib/services";
 import { useAppState } from "@/lib/store";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation } from "lucide-react";
+import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation, Tag, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const ADMIN_WHATSAPP = "22788082987";
 
@@ -25,6 +26,9 @@ const OrderPage = () => {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
 
   if (!service) return <div className="p-8 text-center text-muted-foreground">Service introuvable</div>;
 
@@ -54,9 +58,62 @@ const OrderPage = () => {
     });
   };
 
-  const total = Array.from(selectedOptions.values()).reduce(
+  const subtotal = Array.from(selectedOptions.values()).reduce(
     (sum, { option, quantity }) => sum + option.price * quantity, 0
   );
+
+  const discount = appliedPromo
+    ? appliedPromo.discount_type === "percentage"
+      ? Math.round(subtotal * appliedPromo.discount_value / 100)
+      : Math.min(appliedPromo.discount_value, subtotal)
+    : 0;
+
+  const total = subtotal - discount;
+
+  const applyPromoCode = async () => {
+    if (!promoInput.trim()) return;
+    setPromoLoading(true);
+    const { data, error } = await supabase
+      .from("promo_codes")
+      .select("*")
+      .eq("code", promoInput.trim().toUpperCase())
+      .eq("active", true)
+      .maybeSingle();
+
+    if (error || !data) {
+      toast.error("Code promo invalide");
+      setAppliedPromo(null);
+      setPromoLoading(false);
+      return;
+    }
+
+    if (data.max_uses && data.used_count >= data.max_uses) {
+      toast.error("Ce code promo a expiré (utilisation max atteinte)");
+      setPromoLoading(false);
+      return;
+    }
+
+    if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      toast.error("Ce code promo a expiré");
+      setPromoLoading(false);
+      return;
+    }
+
+    if (data.min_order > subtotal) {
+      toast.error(`Commande minimum de ${data.min_order.toLocaleString("fr-FR")} FCFA requise`);
+      setPromoLoading(false);
+      return;
+    }
+
+    setAppliedPromo(data as PromoCode);
+    toast.success(`Code promo appliqué ! -${data.discount_type === "percentage" ? data.discount_value + "%" : data.discount_value.toLocaleString("fr-FR") + " FCFA"}`);
+    setPromoLoading(false);
+  };
+
+  const removePromo = () => {
+    setAppliedPromo(null);
+    setPromoInput("");
+  };
 
   const shareLocation = () => {
     if (!navigator.geolocation) {
@@ -109,9 +166,17 @@ const OrderPage = () => {
       status: "pending",
       createdAt: now,
       total,
+      promoCode: appliedPromo?.code,
+      discount,
     };
 
     await addOrder(order);
+
+    // Increment promo code usage
+    if (appliedPromo) {
+      await supabase.from("promo_codes").update({ used_count: appliedPromo.used_count + 1 }).eq("id", appliedPromo.id);
+    }
+
     localStorage.setItem("washgo_phone", phone);
 
     // Auto-send WhatsApp notification to admin
@@ -314,6 +379,39 @@ const OrderPage = () => {
           </div>
         </section>
 
+        {/* Promo Code */}
+        <section>
+          <h3 className="font-bold text-foreground mb-3 text-sm uppercase tracking-wide">🏷️ Code promo</h3>
+          {appliedPromo ? (
+            <div className="glass-card rounded-xl p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Tag className="w-4 h-4 text-success" />
+                <span className="font-bold text-success text-sm">{appliedPromo.code}</span>
+                <span className="text-xs text-muted-foreground">
+                  (-{appliedPromo.discount_type === "percentage" ? `${appliedPromo.discount_value}%` : `${appliedPromo.discount_value.toLocaleString("fr-FR")} F`})
+                </span>
+              </div>
+              <button onClick={removePromo} className="text-xs text-destructive font-semibold">Retirer</button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Tag className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Entrer un code promo"
+                  value={promoInput}
+                  onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                  className="pl-10 rounded-xl uppercase"
+                  onKeyDown={(e) => e.key === "Enter" && applyPromoCode()}
+                />
+              </div>
+              <Button variant="outline" className="rounded-xl" onClick={applyPromoCode} disabled={promoLoading}>
+                {promoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Appliquer"}
+              </Button>
+            </div>
+          )}
+        </section>
+
         {/* Submit */}
         <AnimatePresence>
           {selectedOptions.size > 0 && (
@@ -325,6 +423,18 @@ const OrderPage = () => {
                     <span>{(option.price * quantity).toLocaleString("fr-FR")} FCFA</span>
                   </div>
                 ))}
+                {discount > 0 && (
+                  <>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Sous-total</span>
+                      <span>{subtotal.toLocaleString("fr-FR")} FCFA</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-success font-semibold">
+                      <span>🏷️ Réduction ({appliedPromo?.code})</span>
+                      <span>-{discount.toLocaleString("fr-FR")} FCFA</span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between font-extrabold text-lg text-foreground pt-2 border-t border-border">
                   <span>Total</span>
                   <span className="text-gradient">{total.toLocaleString("fr-FR")} FCFA</span>

@@ -102,6 +102,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       payment: order.payment,
       status: order.status,
       total: order.total,
+      promo_code: order.promoCode || null,
+      discount: order.discount || 0,
     });
     if (!error) {
       setOrders((prev) => [order, ...prev]);

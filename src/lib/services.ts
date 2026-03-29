@@ -20,14 +20,27 @@ export interface SelectedOptionWithQty {
   quantity: number;
 }
 
+export interface PromoCode {
+  id: string;
+  code: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  min_order: number;
+  max_uses: number | null;
+  used_count: number;
+  active: boolean;
+  expires_at: string | null;
+  created_at: string;
+}
+
 export interface Order {
   id: string;
   orderNumber?: string;
   clientName: string;
   clientPhone: string;
   service: Service;
-  selectedOption: ServiceOption; // kept for backward compat (first option)
-  selectedOptions?: SelectedOptionWithQty[]; // multi-option
+  selectedOption: ServiceOption;
+  selectedOptions?: SelectedOptionWithQty[];
   quantity: number;
   location: "sur_place" | "domicile";
   address?: string;
@@ -35,6 +48,8 @@ export interface Order {
   status: "pending" | "accepted" | "in_progress" | "completed" | "cancelled";
   createdAt: Date;
   total: number;
+  promoCode?: string;
+  discount?: number;
 }
 
 export const DEFAULT_SERVICES: Service[] = [
