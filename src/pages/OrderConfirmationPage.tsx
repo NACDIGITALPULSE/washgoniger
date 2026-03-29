@@ -138,11 +138,6 @@ const OrderConfirmationPage = () => {
     toast.success("Facture PDF téléchargée !");
   };
 
-  const contactAdmin = () => {
-    const invoiceText = `🧾 *FACTURE WashGo Niger*\n\n📋 N° *${orderNumber}*\n📅 ${orderDate}\n\n👤 ${order.clientName}\n📞 ${order.clientPhone}\n\n🔧 *${order.service.icon} ${order.service.name}*\n${optionsList.map(o => `  • ${o.option.name} ×${o.quantity} — ${(o.option.price * o.quantity).toLocaleString("fr-FR")} F`).join("\n")}\n\n💰 *TOTAL : ${order.total.toLocaleString("fr-FR")} FCFA*\n📍 ${order.location === "domicile" ? "À domicile" : "Sur place"}\n💳 ${paymentLabels[order.payment] || order.payment}\n\n─────────────────\n🚗 *WashGo Niger*\n📱 +227 88 08 29 87\nMerci pour votre confiance ! 🙏`;
-    window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(invoiceText)}`, "_blank");
-  };
-
   const shareLocation = () => {
     if (!navigator.geolocation) {
       toast.error("La géolocalisation n'est pas disponible");
@@ -157,11 +152,6 @@ const OrderConfirmationPage = () => {
       },
       () => toast.error("Impossible d'obtenir la position")
     );
-  };
-
-  const contactAdmin = () => {
-    const message = `Bonjour, commande *N° ${orderNumber}* — ${order.service.name} (${order.total.toLocaleString("fr-FR")} FCFA). ${order.clientName}. Merci !`;
-    window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   return (
