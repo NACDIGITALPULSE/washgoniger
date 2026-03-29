@@ -166,9 +166,17 @@ const OrderPage = () => {
       status: "pending",
       createdAt: now,
       total,
+      promoCode: appliedPromo?.code,
+      discount,
     };
 
     await addOrder(order);
+
+    // Increment promo code usage
+    if (appliedPromo) {
+      await supabase.from("promo_codes").update({ used_count: appliedPromo.used_count + 1 }).eq("id", appliedPromo.id);
+    }
+
     localStorage.setItem("washgo_phone", phone);
 
     // Auto-send WhatsApp notification to admin
