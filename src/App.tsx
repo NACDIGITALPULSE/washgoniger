@@ -27,6 +27,7 @@ const App = () => (
             <Route path="/order/:serviceId" element={<OrderPage />} />
             <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
             <Route path="/my-orders" element={<MyOrdersPage />} />
+            <Route path="/tracking" element={<TrackingPage />} />
             <Route path="/login" element={<AdminLoginPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<NotFound />} />
