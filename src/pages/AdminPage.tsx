@@ -2,13 +2,21 @@ import { useAppState } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { BarChart3, ShoppingBag, TrendingUp, CheckCircle2, Clock, XCircle, Settings, Plus, Trash2, Save, ArrowLeft, LogOut, Bell, MessageCircle, Search, Filter, Users, DollarSign, Send, UserCheck } from "lucide-react";
+import {
+  BarChart3, ShoppingBag, TrendingUp, CheckCircle2, Clock, XCircle, Settings,
+  Plus, Trash2, Save, ArrowLeft, LogOut, Bell, MessageCircle, Search, Filter,
+  Users, DollarSign, Send, UserCheck, Eye, EyeOff, Key, Mail, Calendar,
+  Activity, Target, Percent
+} from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Order, Service, ServiceOption } from "@/lib/services";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line } from "recharts";
+import {
+  PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
+  Tooltip, CartesianGrid, LineChart, Line, AreaChart, Area, Legend
+} from "recharts";
 import logo from "@/assets/logo.png";
 
 const statusActions: Record<string, { next: Order["status"]; label: string }> = {
@@ -26,12 +34,14 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 };
 
 const ADMIN_WHATSAPP = "22788082987";
-const CHART_COLORS = ["hsl(215, 80%, 48%)", "hsl(155, 60%, 42%)", "hsl(38, 92%, 50%)", "hsl(0, 84%, 60%)", "hsl(270, 60%, 50%)"];
+const CHART_COLORS = ["hsl(215, 80%, 48%)", "hsl(155, 60%, 42%)", "hsl(38, 92%, 50%)", "hsl(0, 84%, 60%)", "hsl(270, 60%, 50%)", "hsl(190, 70%, 45%)"];
+
+type TabKey = "dashboard" | "orders" | "users" | "notifications" | "services" | "promos";
 
 const AdminPage = () => {
   const { orders, updateOrderStatus, services, updateService, addService, removeService } = useAppState();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"dashboard" | "orders" | "services" | "promos" | "notifications">("dashboard");
+  const [tab, setTab] = useState<TabKey>("dashboard");
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -44,7 +54,6 @@ const AdminPage = () => {
     checkAuth();
   }, [navigate]);
 
-  // Realtime notifications
   useEffect(() => {
     const channel = supabase
       .channel('admin-orders')
@@ -56,7 +65,7 @@ const AdminPage = () => {
           duration: 15000,
           action: { label: "📱 WhatsApp", onClick: () => window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(msg)}`, "_blank") },
         });
-        try { const a = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGczJj+QxN3LdUMtQYC02NZ+TDM+eLHX2YlVODx0rNPXkFw7OnSu1deMYDs5c7DV2JRgPDlxr9bZlWI9OXKw1tqVYj45c7HX25ViPjp1s9nclmM/O3i22d2YZD87d7bZ3pllQDt4t9remWVAO3i42d+ZZUA8eLna35plQDx5utremGVAPHm62t+ZZUA8ebrb35plQDx5u9vfmmZAPXm729+aZkA9ebzc4JtmQD15vNzgm2ZAPnm83OCbZ0A+eb3d4JxnQD55vd3gnGdAPnm93eCcZ0A+eb3d4JxnQD55vd3gnGdAPnm93eCcaEA="); a.volume = 0.5; a.play().catch(() => {}); } catch {}
+        try { new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGczJj+QxN3LdUMtQYC02NZ+TDM+eLHX2YlVODx0rNPXkFw7OnSu1deMYDs5c7DV2JRgPDlxr9bZlWI9OXKw1tqVYj45c7HX25ViPjp1s9nclmM/O3i22d2YZD87d7bZ3pllQDt4t9remWVAO3i42d+ZZUA8eLna35plQDx5utremGVAPHm62t+ZZUA8ebrb35plQDx5u9vfmmZAPXm729+aZkA9ebzc4JtmQD15vNzgm2ZAPnm83OCbZ0A+eb3d4JxnQD55vd3gnGdAPnm93eCcZ0A+eb3d4JxnQD55vd3gnGdAPnm93eCcaEA=").play().catch(() => {}); } catch {}
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -73,60 +82,65 @@ const AdminPage = () => {
   const completedCount = orders.filter((o) => o.status === "completed").length;
   const uniqueClients = new Set(orders.map((o) => o.clientPhone)).size;
 
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: "dashboard", label: "📊 Stats" },
+    { key: "orders", label: "📋 Cmd" },
+    { key: "users", label: "👥 Users" },
+    { key: "notifications", label: "🔔 Notifs" },
+    { key: "services", label: "⚙️ Svcs" },
+    { key: "promos", label: "🏷️ Promos" },
+  ];
+
   return (
     <div className="min-h-screen pb-8">
       {/* Header */}
-      <div className="hero-gradient px-4 pt-6 pb-10 relative">
+      <div className="hero-gradient px-4 pt-5 pb-8 relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.1),transparent_50%)]" />
         <div className="container max-w-lg mx-auto relative">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <img src={logo} alt="WashGo" className="w-9 h-9 rounded-xl object-contain" />
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2.5">
+              <img src={logo} alt="WashGo" className="w-8 h-8 rounded-lg object-contain" />
               <div>
-                <h1 className="text-xl font-extrabold text-primary-foreground">Admin Panel</h1>
-                <p className="text-sm text-primary-foreground/60">WashGo Niger</p>
+                <h1 className="text-lg font-extrabold text-primary-foreground leading-none">Admin</h1>
+                <p className="text-[10px] text-primary-foreground/50">WashGo Niger</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => navigate("/")} className="flex items-center gap-1 text-primary-foreground/70 text-sm font-medium hover:text-primary-foreground transition-colors">
-                <ArrowLeft className="w-4 h-4" /> Retour
+              <button onClick={() => navigate("/")} className="text-primary-foreground/60 text-xs font-medium hover:text-primary-foreground flex items-center gap-1">
+                <ArrowLeft className="w-3.5 h-3.5" /> Retour
               </button>
-              <button onClick={handleLogout} className="flex items-center gap-1 text-primary-foreground/70 text-sm font-medium hover:text-primary-foreground transition-colors ml-2">
+              <button onClick={handleLogout} className="text-primary-foreground/60 hover:text-primary-foreground ml-1">
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
           </div>
+
+          {/* KPI row */}
           <div className="grid grid-cols-4 gap-2">
             {[
-              { icon: TrendingUp, label: "Revenus", value: `${(totalRevenue / 1000).toFixed(0)}k F` },
-              { icon: Clock, label: "En attente", value: pendingCount.toString() },
-              { icon: CheckCircle2, label: "Terminées", value: completedCount.toString() },
+              { icon: TrendingUp, label: "Revenus", value: `${(totalRevenue / 1000).toFixed(0)}k` },
+              { icon: Clock, label: "Attente", value: pendingCount.toString() },
+              { icon: CheckCircle2, label: "Terminé", value: completedCount.toString() },
               { icon: Users, label: "Clients", value: uniqueClients.toString() },
             ].map((stat) => (
-              <div key={stat.label} className="bg-primary-foreground/10 backdrop-blur-sm rounded-2xl p-2.5 text-center border border-primary-foreground/10">
-                <stat.icon className="w-3.5 h-3.5 mx-auto mb-1 text-primary-foreground/70" />
-                <div className="text-sm font-extrabold text-primary-foreground">{stat.value}</div>
-                <div className="text-[9px] text-primary-foreground/50">{stat.label}</div>
+              <div key={stat.label} className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl p-2 text-center border border-primary-foreground/10">
+                <stat.icon className="w-3.5 h-3.5 mx-auto mb-0.5 text-primary-foreground/60" />
+                <div className="text-sm font-extrabold text-primary-foreground leading-none">{stat.value}</div>
+                <div className="text-[8px] text-primary-foreground/40 mt-0.5">{stat.label}</div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="container max-w-lg mx-auto px-4 -mt-5 relative z-10">
-        <div className="glass-card rounded-2xl p-1 flex mb-6 shadow-lg overflow-x-auto scrollbar-none">
-          {([
-            { key: "dashboard" as const, label: "📊 Stats" },
-            { key: "orders" as const, label: "📋 Commandes" },
-            { key: "notifications" as const, label: "🔔 Notifs" },
-            { key: "services" as const, label: "⚙️ Services" },
-            { key: "promos" as const, label: "🏷️ Promos" },
-          ]).map((t) => (
+      {/* Tabs - centered and scrollable */}
+      <div className="container max-w-lg mx-auto px-4 -mt-4 relative z-10">
+        <div className="glass-card rounded-2xl p-1 flex shadow-lg overflow-x-auto scrollbar-none">
+          {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex-1 py-2.5 rounded-xl text-[11px] font-semibold transition-all whitespace-nowrap px-2 ${
+              className={`flex-1 min-w-[60px] py-2 rounded-xl text-[10px] font-semibold transition-all whitespace-nowrap text-center ${
                 tab === t.key ? "hero-gradient text-primary-foreground shadow-md" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -135,19 +149,22 @@ const AdminPage = () => {
           ))}
         </div>
 
-        <AnimatePresence mode="wait">
-          {tab === "dashboard" && <DashboardTab key="dash" orders={orders} totalRevenue={totalRevenue} />}
-          {tab === "orders" && <OrdersTab key="ord" orders={orders} updateOrderStatus={updateOrderStatus} />}
-          {tab === "notifications" && <NotificationsTab key="notif" orders={orders} />}
-          {tab === "services" && <ServicesTab key="svc" services={services} updateService={updateService} addService={addService} removeService={removeService} />}
-          {tab === "promos" && <PromosTab key="promo" />}
-        </AnimatePresence>
+        <div className="mt-5">
+          <AnimatePresence mode="wait">
+            {tab === "dashboard" && <DashboardTab key="dash" orders={orders} totalRevenue={totalRevenue} />}
+            {tab === "orders" && <OrdersTab key="ord" orders={orders} updateOrderStatus={updateOrderStatus} />}
+            {tab === "users" && <UsersTab key="usr" />}
+            {tab === "notifications" && <NotificationsTab key="notif" orders={orders} />}
+            {tab === "services" && <ServicesTab key="svc" services={services} updateService={updateService} addService={addService} removeService={removeService} />}
+            {tab === "promos" && <PromosTab key="promo" />}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
 };
 
-// ── Advanced Dashboard ──
+// ── Dashboard Tab ──
 const DashboardTab = ({ orders, totalRevenue }: { orders: Order[]; totalRevenue: number }) => {
   const statusData = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -165,99 +182,151 @@ const DashboardTab = ({ orders, totalRevenue }: { orders: Order[]; totalRevenue:
       map[k].count += 1;
       if (o.status === "completed") map[k].revenue += o.total;
     });
-    return Object.entries(map).map(([name, d]) => ({ name: name.length > 10 ? name.slice(0, 10) + "…" : name, commandes: d.count, revenus: d.revenue }));
+    return Object.entries(map).map(([name, d]) => ({ name: name.length > 12 ? name.slice(0, 12) + "…" : name, commandes: d.count, revenus: d.revenue }));
   }, [orders]);
 
   const dailyData = useMemo(() => {
-    const map: Record<string, number> = {};
-    orders.filter((o) => o.status === "completed").forEach((o) => {
+    const map: Record<string, { revenue: number; orders: number }> = {};
+    orders.forEach((o) => {
       const d = new Date(o.createdAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
-      map[d] = (map[d] || 0) + o.total;
+      map[d] = map[d] || { revenue: 0, orders: 0 };
+      map[d].orders += 1;
+      if (o.status === "completed") map[d].revenue += o.total;
     });
-    return Object.entries(map).slice(-7).map(([date, total]) => ({ date, total }));
+    return Object.entries(map).slice(-14).map(([date, d]) => ({ date, revenus: d.revenue, commandes: d.orders }));
+  }, [orders]);
+
+  const paymentData = useMemo(() => {
+    const map: Record<string, number> = {};
+    orders.forEach((o) => {
+      const p = o.payment === "cash" ? "Cash" : o.payment.charAt(0).toUpperCase() + o.payment.slice(1).replace("_", " ");
+      map[p] = (map[p] || 0) + 1;
+    });
+    return Object.entries(map).map(([name, value]) => ({ name, value }));
   }, [orders]);
 
   const avgOrderValue = orders.length > 0 ? Math.round(orders.reduce((s, o) => s + o.total, 0) / orders.length) : 0;
   const todayOrders = orders.filter((o) => new Date(o.createdAt).toDateString() === new Date().toDateString()).length;
+  const todayRevenue = orders.filter((o) => o.status === "completed" && new Date(o.createdAt).toDateString() === new Date().toDateString()).reduce((s, o) => s + o.total, 0);
+  const conversionRate = orders.length > 0 ? Math.round((orders.filter(o => o.status === "completed").length / orders.length) * 100) : 0;
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
       {/* KPI cards */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: "Commandes totales", value: orders.length, icon: ShoppingBag, color: "text-primary" },
-          { label: "Aujourd'hui", value: todayOrders, icon: Clock, color: "text-warning" },
-          { label: "Chiffre d'affaires", value: `${totalRevenue.toLocaleString("fr-FR")} F`, icon: DollarSign, color: "text-success" },
-          { label: "Panier moyen", value: `${avgOrderValue.toLocaleString("fr-FR")} F`, icon: TrendingUp, color: "text-primary" },
+          { label: "Commandes totales", value: orders.length, icon: ShoppingBag, color: "text-primary", sub: `${todayOrders} aujourd'hui` },
+          { label: "Chiffre d'affaires", value: `${totalRevenue.toLocaleString("fr-FR")} F`, icon: DollarSign, color: "text-success", sub: `${todayRevenue.toLocaleString("fr-FR")} F aujourd'hui` },
+          { label: "Panier moyen", value: `${avgOrderValue.toLocaleString("fr-FR")} F`, icon: Target, color: "text-primary" },
+          { label: "Taux conversion", value: `${conversionRate}%`, icon: Percent, color: "text-secondary" },
         ].map((kpi) => (
           <div key={kpi.label} className="glass-card rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <kpi.icon className={`w-4 h-4 ${kpi.color}`} />
-              <span className="text-[11px] text-muted-foreground font-medium">{kpi.label}</span>
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center">
+                <kpi.icon className={`w-3.5 h-3.5 ${kpi.color}`} />
+              </div>
             </div>
-            <div className="text-lg font-extrabold text-foreground">{kpi.value}</div>
+            <div className="text-lg font-extrabold text-foreground leading-tight">{kpi.value}</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">{kpi.label}</div>
+            {kpi.sub && <div className="text-[9px] text-muted-foreground/60 mt-0.5">{kpi.sub}</div>}
           </div>
         ))}
       </div>
 
-      {/* Status pie chart */}
-      {statusData.length > 0 && (
+      {/* Revenue trend */}
+      {dailyData.length > 1 && (
         <div className="glass-card rounded-2xl p-5">
-          <h3 className="font-bold text-foreground mb-3 text-sm">📊 Répartition par statut</h3>
-          <div className="flex items-center gap-4">
-            <div className="w-32 h-32">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={statusData} cx="50%" cy="50%" innerRadius={25} outerRadius={50} dataKey="value" paddingAngle={3}>
-                    {statusData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex-1 space-y-1.5">
-              {statusData.map((d, i) => (
-                <div key={d.name} className="flex items-center gap-2 text-xs">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                  <span className="text-muted-foreground flex-1">{d.name}</span>
-                  <span className="font-bold text-foreground">{d.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Revenue by service */}
-      {serviceData.length > 0 && (
-        <div className="glass-card rounded-2xl p-5">
-          <h3 className="font-bold text-foreground mb-3 text-sm">💰 Revenus par service</h3>
-          <div className="h-48">
+          <h3 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
+            <Activity className="w-4 h-4 text-primary" /> Tendance des revenus
+          </h3>
+          <div className="h-44">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={serviceData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 15%, 88%)" />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
+              <AreaChart data={dailyData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="colorRevenu" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(215, 80%, 48%)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(215, 80%, 48%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 15%, 90%)" />
+                <XAxis dataKey="date" tick={{ fontSize: 9 }} />
+                <YAxis tick={{ fontSize: 9 }} />
                 <Tooltip formatter={(v: number) => `${v.toLocaleString("fr-FR")} F`} />
-                <Bar dataKey="revenus" fill="hsl(215, 80%, 48%)" radius={[6, 6, 0, 0]} />
-              </BarChart>
+                <Area type="monotone" dataKey="revenus" stroke="hsl(215, 80%, 48%)" strokeWidth={2} fill="url(#colorRevenu)" />
+                <Line type="monotone" dataKey="commandes" stroke="hsl(155, 60%, 42%)" strokeWidth={1.5} dot={false} yAxisId={0} />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
       )}
 
-      {/* Daily trend */}
-      {dailyData.length > 1 && (
+      {/* Status + Payment pie charts */}
+      <div className="grid grid-cols-2 gap-3">
+        {statusData.length > 0 && (
+          <div className="glass-card rounded-2xl p-4">
+            <h3 className="font-bold text-foreground mb-2 text-xs">Statuts</h3>
+            <div className="h-28">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={statusData} cx="50%" cy="50%" innerRadius={20} outerRadius={42} dataKey="value" paddingAngle={3}>
+                    {statusData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="space-y-1 mt-2">
+              {statusData.map((d, i) => (
+                <div key={d.name} className="flex items-center gap-1.5 text-[10px]">
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                  <span className="text-muted-foreground flex-1 truncate">{d.name}</span>
+                  <span className="font-bold text-foreground">{d.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {paymentData.length > 0 && (
+          <div className="glass-card rounded-2xl p-4">
+            <h3 className="font-bold text-foreground mb-2 text-xs">Paiements</h3>
+            <div className="h-28">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={paymentData} cx="50%" cy="50%" innerRadius={20} outerRadius={42} dataKey="value" paddingAngle={3}>
+                    {paymentData.map((_, i) => <Cell key={i} fill={CHART_COLORS[(i + 2) % CHART_COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="space-y-1 mt-2">
+              {paymentData.map((d, i) => (
+                <div key={d.name} className="flex items-center gap-1.5 text-[10px]">
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[(i + 2) % CHART_COLORS.length] }} />
+                  <span className="text-muted-foreground flex-1 truncate">{d.name}</span>
+                  <span className="font-bold text-foreground">{d.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Revenue by service */}
+      {serviceData.length > 0 && (
         <div className="glass-card rounded-2xl p-5">
-          <h3 className="font-bold text-foreground mb-3 text-sm">📈 Tendance (7 derniers jours)</h3>
-          <div className="h-40">
+          <h3 className="font-bold text-foreground mb-3 text-sm">💰 Revenus par service</h3>
+          <div className="h-44">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={dailyData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 15%, 88%)" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
+              <BarChart data={serviceData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 15%, 90%)" />
+                <XAxis dataKey="name" tick={{ fontSize: 9 }} />
+                <YAxis tick={{ fontSize: 9 }} />
                 <Tooltip formatter={(v: number) => `${v.toLocaleString("fr-FR")} F`} />
-                <Line type="monotone" dataKey="total" stroke="hsl(155, 60%, 42%)" strokeWidth={2} dot={{ fill: "hsl(155, 60%, 42%)" }} />
-              </LineChart>
+                <Bar dataKey="revenus" fill="hsl(215, 80%, 48%)" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="commandes" fill="hsl(155, 60%, 42%)" radius={[6, 6, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -274,17 +343,182 @@ const DashboardTab = ({ orders, totalRevenue }: { orders: Order[]; totalRevenue:
               acc[o.clientPhone].total += o.total;
               return acc;
             }, {})
-          ).sort(([, a], [, b]) => b.total - a.total).slice(0, 5).map(([phone, c]) => (
-            <div key={phone} className="flex items-center justify-between text-sm">
-              <div>
-                <span className="font-medium text-foreground">{c.name}</span>
-                <span className="text-muted-foreground text-xs ml-2">{c.count} cmd</span>
+          ).sort(([, a], [, b]) => b.total - a.total).slice(0, 5).map(([phone, c], i) => (
+            <div key={phone} className="flex items-center gap-3 text-sm">
+              <div className="w-6 h-6 rounded-full hero-gradient flex items-center justify-center text-[10px] font-bold text-primary-foreground">{i + 1}</div>
+              <div className="flex-1 min-w-0">
+                <span className="font-medium text-foreground truncate block">{c.name}</span>
+                <span className="text-[10px] text-muted-foreground">{c.count} cmd</span>
               </div>
-              <span className="font-bold text-primary">{c.total.toLocaleString("fr-FR")} F</span>
+              <span className="font-bold text-primary text-xs">{c.total.toLocaleString("fr-FR")} F</span>
             </div>
           ))}
         </div>
       </div>
+    </motion.div>
+  );
+};
+
+// ── Users Management Tab ──
+const UsersTab = () => {
+  const [users, setUsers] = useState<any[]>([]);
+  const [roles, setRoles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [editingUser, setEditingUser] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    try {
+      const res = await supabase.functions.invoke("manage-users", {
+        body: { action: "list" },
+      });
+      if (res.data) {
+        setUsers(res.data.users || []);
+        setRoles(res.data.roles || []);
+      }
+    } catch (e) {
+      toast.error("Erreur lors du chargement des utilisateurs");
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchUsers(); }, []);
+
+  const deleteUser = async (userId: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce compte ?")) return;
+    const res = await supabase.functions.invoke("manage-users", {
+      body: { action: "delete", userId },
+    });
+    if (res.data?.success) {
+      toast.success("Compte supprimé");
+      fetchUsers();
+    } else {
+      toast.error("Erreur lors de la suppression");
+    }
+  };
+
+  const updatePassword = async (userId: string) => {
+    if (!newPassword || newPassword.length < 6) { toast.error("Mot de passe trop court (min 6)"); return; }
+    const res = await supabase.functions.invoke("manage-users", {
+      body: { action: "update_password", userId, password: newPassword },
+    });
+    if (res.data?.success) {
+      toast.success("Mot de passe mis à jour");
+      setEditingUser(null);
+      setNewPassword("");
+    } else {
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
+  const getUserRole = (userId: string) => {
+    const role = roles.find((r: any) => r.user_id === userId);
+    return role?.role || "user";
+  };
+
+  const filteredUsers = users.filter((u) =>
+    !searchQuery || u.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
+          <Users className="w-4 h-4 text-primary" /> Utilisateurs ({users.length})
+        </h3>
+      </div>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+        <Input placeholder="Rechercher par email..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl text-sm h-9" />
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-muted-foreground text-sm">Chargement...</p>
+        </div>
+      ) : filteredUsers.length === 0 ? (
+        <div className="text-center py-12">
+          <Users className="w-12 h-12 mx-auto text-muted-foreground/20 mb-3" />
+          <p className="text-muted-foreground text-sm">Aucun utilisateur trouvé</p>
+        </div>
+      ) : (
+        filteredUsers.map((user) => {
+          const role = getUserRole(user.id);
+          const isEditing = editingUser === user.id;
+          return (
+            <motion.div key={user.id} className="glass-card rounded-2xl overflow-hidden" layout>
+              <div className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0 ${role === "admin" ? "hero-gradient text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                      {role === "admin" ? "👑" : "👤"}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-medium text-foreground text-sm truncate flex items-center gap-2">
+                        {user.email}
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${role === "admin" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+                          {role}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground flex items-center gap-2 mt-0.5">
+                        <span className="flex items-center gap-0.5">
+                          <Calendar className="w-2.5 h-2.5" />
+                          {new Date(user.created_at).toLocaleDateString("fr-FR")}
+                        </span>
+                        {user.last_sign_in_at && (
+                          <span className="flex items-center gap-0.5">
+                            <Clock className="w-2.5 h-2.5" />
+                            {new Date(user.last_sign_in_at).toLocaleDateString("fr-FR")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={() => { setEditingUser(isEditing ? null : user.id); setNewPassword(""); }} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                      <Key className="w-3.5 h-3.5 text-primary" />
+                    </button>
+                    <button onClick={() => deleteUser(user.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </button>
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {isEditing && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                      <div className="mt-3 pt-3 border-t border-border flex gap-2">
+                        <div className="relative flex-1">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Nouveau mot de passe"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="rounded-xl text-sm h-8 pr-8"
+                          />
+                          <button onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1.5">
+                            {showPassword ? <EyeOff className="w-3.5 h-3.5 text-muted-foreground" /> : <Eye className="w-3.5 h-3.5 text-muted-foreground" />}
+                          </button>
+                        </div>
+                        <Button variant="hero" size="sm" className="rounded-xl h-8 text-xs" onClick={() => updatePassword(user.id)}>
+                          <Save className="w-3 h-3" /> OK
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          );
+        })
+      )}
     </motion.div>
   );
 };
@@ -305,60 +539,36 @@ const NotificationsTab = ({ orders }: { orders: Order[] }) => {
     return Object.values(map);
   }, [orders]);
 
-  const toggleClient = (phone: string) => {
-    setSelectedClients((prev) => prev.includes(phone) ? prev.filter((p) => p !== phone) : [...prev, phone]);
-  };
+  const toggleClient = (phone: string) => setSelectedClients((prev) => prev.includes(phone) ? prev.filter((p) => p !== phone) : [...prev, phone]);
+  const toggleAll = () => { if (selectAll) setSelectedClients([]); else setSelectedClients(uniqueClients.map((c) => c.phone)); setSelectAll(!selectAll); };
 
-  const toggleAll = () => {
-    if (selectAll) { setSelectedClients([]); } else { setSelectedClients(uniqueClients.map((c) => c.phone)); }
-    setSelectAll(!selectAll);
-  };
-
-  const buildWhatsAppMessage = (clientName: string) => {
-    return `Bonjour *${clientName}*,\n\n${message}\n\n🚗✨ *WashGo Niger*\n📞 +227 88 08 29 87\n🌐 washgoniger.lovable.app`;
-  };
-
-  const sendIndividual = (client: { name: string; phone: string }) => {
-    const cleanPhone = client.phone.replace(/\D/g, "");
-    const fullPhone = cleanPhone.startsWith("227") ? cleanPhone : `227${cleanPhone}`;
-    const msg = buildWhatsAppMessage(client.name);
-    window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+  const buildMsg = (name: string) => `Bonjour *${name}*,\n\n${message}\n\n🚗✨ *WashGo Niger*\n📞 +227 88 08 29 87\n🌐 washgoniger.lovable.app`;
+  const sendTo = (client: { name: string; phone: string }) => {
+    const p = client.phone.replace(/\D/g, "");
+    window.open(`https://wa.me/${p.startsWith("227") ? p : `227${p}`}?text=${encodeURIComponent(buildMsg(client.name))}`, "_blank");
   };
 
   const sendToSelected = () => {
-    if (!message.trim()) { toast.error("Écrivez un message d'abord"); return; }
-    if (selectedClients.length === 0) { toast.error("Sélectionnez au moins un client"); return; }
+    if (!message.trim()) { toast.error("Écrivez un message"); return; }
+    if (selectedClients.length === 0) { toast.error("Sélectionnez des clients"); return; }
     const clients = uniqueClients.filter((c) => selectedClients.includes(c.phone));
-    // Open first one immediately
-    if (clients.length > 0) sendIndividual(clients[0]);
-    // Queue rest with delays
-    clients.slice(1).forEach((client, i) => {
-      setTimeout(() => sendIndividual(client), (i + 1) * 2000);
-    });
-    toast.success(`Envoi en cours vers ${clients.length} client(s)...`);
+    if (clients.length > 0) sendTo(clients[0]);
+    clients.slice(1).forEach((c, i) => setTimeout(() => sendTo(c), (i + 1) * 2000));
+    toast.success(`Envoi vers ${clients.length} client(s)...`);
   };
 
-  // Notify about order status
   const sendStatusNotification = (order: Order) => {
-    const cleanPhone = order.clientPhone.replace(/\D/g, "");
-    const fullPhone = cleanPhone.startsWith("227") ? cleanPhone : `227${cleanPhone}`;
-    const statusMsg: Record<string, string> = {
-      pending: "en attente de validation",
-      accepted: "acceptée ✅",
-      in_progress: "en cours de traitement 🔄",
-      completed: "terminée ✅🎉",
-      cancelled: "annulée ❌",
-    };
-    const msg = `Bonjour *${order.clientName}*,\n\nVotre commande *${order.service.name}* (${order.orderNumber || ""}) est maintenant *${statusMsg[order.status] || order.status}*.\n\n💰 Total: *${order.total.toLocaleString("fr-FR")} FCFA*\n\nMerci pour votre confiance !\n\n🚗✨ *WashGo Niger*\n📞 +227 88 08 29 87`;
+    const p = order.clientPhone.replace(/\D/g, "");
+    const fullPhone = p.startsWith("227") ? p : `227${p}`;
+    const statusMsg: Record<string, string> = { pending: "en attente", accepted: "acceptée ✅", in_progress: "en cours 🔄", completed: "terminée ✅🎉", cancelled: "annulée ❌" };
+    const msg = `Bonjour *${order.clientName}*,\n\nVotre commande *${order.service.name}* (${order.orderNumber || ""}) est maintenant *${statusMsg[order.status] || order.status}*.\n\n💰 Total: *${order.total.toLocaleString("fr-FR")} FCFA*\n\nMerci !\n🚗✨ *WashGo Niger*`;
     window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
-  // In-progress orders for status notifications
   const activeOrders = orders.filter((o) => o.status !== "completed" && o.status !== "cancelled");
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
-      {/* Compose message */}
       <div className="glass-card rounded-2xl p-5">
         <h3 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
           <Send className="w-4 h-4 text-primary" /> Envoyer une notification
@@ -366,68 +576,55 @@ const NotificationsTab = ({ orders }: { orders: Order[] }) => {
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Écrivez votre message ici... (ex: Nouvelle offre spéciale !)"
-          className="w-full rounded-xl border border-border bg-background p-3 text-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-primary/20"
+          placeholder="Écrivez votre message ici..."
+          className="w-full rounded-xl border border-border bg-background p-3 text-sm resize-none h-20 focus:outline-none focus:ring-2 focus:ring-primary/20"
         />
-        <div className="flex gap-2 mt-3">
-          <Button variant="hero" size="sm" className="rounded-xl flex-1" onClick={sendToSelected}>
-            <Send className="w-4 h-4" /> Envoyer ({selectedClients.length})
-          </Button>
-        </div>
+        <Button variant="hero" size="sm" className="rounded-xl w-full mt-3" onClick={sendToSelected}>
+          <Send className="w-4 h-4" /> Envoyer ({selectedClients.length})
+        </Button>
       </div>
 
-      {/* Client list */}
       <div className="glass-card rounded-2xl p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
             <Users className="w-4 h-4 text-primary" /> Clients ({uniqueClients.length})
           </h3>
           <button onClick={toggleAll} className="text-xs font-semibold text-primary">
-            {selectAll ? "Tout désélectionner" : "Tout sélectionner"}
+            {selectAll ? "Désélectionner" : "Tout sélectionner"}
           </button>
         </div>
-        <div className="space-y-2 max-h-60 overflow-y-auto">
+        <div className="space-y-2 max-h-56 overflow-y-auto">
           {uniqueClients.map((client) => (
             <div key={client.phone} className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/50 transition-colors">
-              <input
-                type="checkbox"
-                checked={selectedClients.includes(client.phone)}
-                onChange={() => toggleClient(client.phone)}
-                className="w-4 h-4 rounded accent-primary"
-              />
+              <input type="checkbox" checked={selectedClients.includes(client.phone)} onChange={() => toggleClient(client.phone)} className="w-4 h-4 rounded accent-primary" />
               <div className="flex-1 min-w-0">
                 <div className="font-medium text-foreground text-sm truncate">{client.name}</div>
-                <div className="text-[11px] text-muted-foreground">{client.phone}</div>
+                <div className="text-[10px] text-muted-foreground">{client.phone}</div>
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
-                if (!message.trim()) { toast.error("Écrivez un message"); return; }
-                sendIndividual(client);
-              }}>
-                <MessageCircle className="w-4 h-4 text-success" />
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => { if (!message.trim()) { toast.error("Écrivez un message"); return; } sendTo(client); }}>
+                <MessageCircle className="w-3.5 h-3.5 text-success" />
               </Button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Active order notifications */}
       {activeOrders.length > 0 && (
         <div className="glass-card rounded-2xl p-5">
           <h3 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
             <Bell className="w-4 h-4 text-warning" /> Notifications de statut
           </h3>
-          <p className="text-xs text-muted-foreground mb-3">Notifiez vos clients du statut de leur prestation</p>
-          <div className="space-y-2 max-h-60 overflow-y-auto">
+          <div className="space-y-2 max-h-56 overflow-y-auto">
             {activeOrders.map((order) => {
               const status = statusLabels[order.status];
               return (
                 <div key={order.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/30">
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-foreground text-sm truncate">{order.clientName}</div>
-                    <div className="text-[11px] text-muted-foreground">{order.service.name} • <span className={`${status.color} text-primary-foreground px-1.5 py-0.5 rounded-full text-[9px] font-semibold`}>{status.label}</span></div>
+                    <div className="text-[10px] text-muted-foreground">{order.service.name} • <span className={`${status.color} text-primary-foreground px-1.5 py-0.5 rounded-full text-[9px] font-semibold`}>{status.label}</span></div>
                   </div>
                   <Button variant="outline" size="sm" className="rounded-xl text-xs shrink-0" onClick={() => sendStatusNotification(order)}>
-                    <MessageCircle className="w-3.5 h-3.5 text-success" /> WhatsApp
+                    <MessageCircle className="w-3 h-3 text-success" /> WA
                   </Button>
                 </div>
               );
@@ -441,89 +638,81 @@ const NotificationsTab = ({ orders }: { orders: Order[] }) => {
 
 // ── Orders Tab ──
 const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrderStatus: (id: string, status: Order["status"]) => void }) => {
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   const openWhatsApp = (order: Order) => {
-    const cleanPhone = order.clientPhone.replace(/\D/g, "");
-    const fullPhone = cleanPhone.startsWith("227") ? cleanPhone : `227${cleanPhone}`;
-    const statusMsg: Record<string, string> = {
-      pending: "en attente",
-      accepted: "acceptée ✅",
-      in_progress: "en cours 🔄",
-      completed: "terminée ✅🎉",
-      cancelled: "annulée",
-    };
+    const p = order.clientPhone.replace(/\D/g, "");
+    const fullPhone = p.startsWith("227") ? p : `227${p}`;
+    const statusMsg: Record<string, string> = { pending: "en attente", accepted: "acceptée ✅", in_progress: "en cours 🔄", completed: "terminée ✅🎉", cancelled: "annulée" };
     const message = `Bonjour *${order.clientName}*,\n\nVotre commande *${order.service.name}* ${order.orderNumber ? `(${order.orderNumber})` : ""} est *${statusMsg[order.status]}*.\n\n💰 Total: *${order.total.toLocaleString("fr-FR")} FCFA*\n\nMerci !\n🚗✨ *WashGo Niger*`;
     window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
-  const filteredOrders = orders.filter((o) => {
+  const filtered = orders.filter((o) => {
     const matchStatus = statusFilter === "all" || o.status === statusFilter;
     const matchSearch = !searchQuery || o.clientName.toLowerCase().includes(searchQuery.toLowerCase()) || o.clientPhone.includes(searchQuery);
     return matchStatus && matchSearch;
   });
 
-  const filterButtons = [
-    { key: "all", label: "Toutes" },
-    { key: "pending", label: "En attente" },
-    { key: "accepted", label: "Acceptées" },
-    { key: "in_progress", label: "En cours" },
-    { key: "completed", label: "Terminées" },
-  ];
-
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
       <div className="relative">
         <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Rechercher un client..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl text-sm h-9" />
+        <Input placeholder="Rechercher..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl text-sm h-9" />
       </div>
 
       <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-        {filterButtons.map((f) => (
-          <button key={f.key} onClick={() => setStatusFilter(f.key)} className={`whitespace-nowrap text-xs font-semibold px-3 py-1.5 rounded-full transition-all ${statusFilter === f.key ? "hero-gradient text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
+        {[
+          { key: "all", label: "Toutes" },
+          { key: "pending", label: "Attente" },
+          { key: "accepted", label: "Acceptées" },
+          { key: "in_progress", label: "En cours" },
+          { key: "completed", label: "Terminées" },
+        ].map((f) => (
+          <button key={f.key} onClick={() => setStatusFilter(f.key)} className={`whitespace-nowrap text-[10px] font-semibold px-3 py-1.5 rounded-full transition-all ${statusFilter === f.key ? "hero-gradient text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
             {f.label}
             {f.key !== "all" && <span className="ml-1 opacity-70">{orders.filter((o) => o.status === f.key).length}</span>}
           </button>
         ))}
       </div>
 
-      {filteredOrders.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="text-center py-16">
-          <ShoppingBag className="w-14 h-14 mx-auto text-muted-foreground/20 mb-3" />
+          <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground/20 mb-3" />
           <p className="text-muted-foreground text-sm">Aucune commande</p>
         </div>
       ) : (
-        filteredOrders.map((order, i) => {
+        filtered.map((order, i) => {
           const status = statusLabels[order.status];
           const action = statusActions[order.status];
           return (
-            <motion.div key={order.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className="glass-card rounded-2xl p-4">
-              <div className="flex items-start justify-between mb-3">
+            <motion.div key={order.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className="glass-card rounded-2xl p-4">
+              <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="font-bold text-foreground text-sm">
                     {order.service.icon} {order.service.name} — {order.selectedOption.name}
-                    {order.quantity > 1 && <span className="text-muted-foreground font-normal ml-1">× {order.quantity}{order.selectedOption.unit === "kg" ? " kg" : ""}</span>}
+                    {order.quantity > 1 && <span className="text-muted-foreground font-normal ml-1">× {order.quantity}</span>}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">{order.clientName} • {order.clientPhone}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{order.clientName} • {order.clientPhone}</div>
                   {order.orderNumber && <div className="text-[10px] text-primary font-semibold">#{order.orderNumber}</div>}
-                  <div className="text-xs text-muted-foreground">
-                    {order.location === "domicile" ? `📍 ${order.address}` : "🏪 Sur place"} • {order.payment === "cash" ? "💵 Cash" : `📱 ${order.payment}`}
+                  <div className="text-[10px] text-muted-foreground">
+                    {order.location === "domicile" ? `📍 ${order.address}` : "🏪 Sur place"} • {order.payment === "cash" ? "💵" : "📱"} {order.payment}
                   </div>
                 </div>
-                <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full text-primary-foreground ${status.color}`}>{status.label}</span>
+                <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full text-primary-foreground ${status.color}`}>{status.label}</span>
               </div>
-              <div className="flex items-center justify-between pt-3 border-t border-border">
-                <span className="text-sm font-extrabold text-primary">{order.total.toLocaleString("fr-FR")} FCFA</span>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="rounded-xl text-success border-success/20 hover:bg-success/5" onClick={() => openWhatsApp(order)}>
-                    <MessageCircle className="w-4 h-4" />
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <span className="text-sm font-extrabold text-primary">{order.total.toLocaleString("fr-FR")} F</span>
+                <div className="flex gap-1.5">
+                  <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-success border-success/20" onClick={() => openWhatsApp(order)}>
+                    <MessageCircle className="w-3.5 h-3.5" />
                   </Button>
                   {order.status === "pending" && (
-                    <Button variant="outline" size="sm" className="rounded-xl" onClick={() => updateOrderStatus(order.id, "cancelled")}>Refuser</Button>
+                    <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-xs" onClick={() => updateOrderStatus(order.id, "cancelled")}>Refuser</Button>
                   )}
                   {action && (
-                    <Button variant="success" size="sm" className="rounded-xl" onClick={() => updateOrderStatus(order.id, action.next)}>
+                    <Button variant="success" size="sm" className="rounded-xl h-7 px-2 text-xs" onClick={() => updateOrderStatus(order.id, action.next)}>
                       {action.label}
                     </Button>
                   )}
@@ -537,7 +726,7 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
   );
 };
 
-// ── Services Management Tab ──
+// ── Services Tab ──
 const ServicesTab = ({ services, updateService, addService, removeService }: { services: Service[]; updateService: (s: Service) => void; addService: (s: Service) => void; removeService: (id: string) => void }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -545,7 +734,7 @@ const ServicesTab = ({ services, updateService, addService, removeService }: { s
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="font-bold text-foreground">Gérer les services</h3>
+        <h3 className="font-bold text-foreground">Services</h3>
         <Button variant="hero" size="sm" className="rounded-xl" onClick={() => setShowAdd(true)}>
           <Plus className="w-4 h-4" /> Ajouter
         </Button>
@@ -567,7 +756,7 @@ const ServicesTab = ({ services, updateService, addService, removeService }: { s
               <div className="w-10 h-10 rounded-xl hero-gradient flex items-center justify-center text-lg">{service.icon}</div>
               <div>
                 <div className="font-bold text-foreground text-sm">{service.name}</div>
-                <div className="text-xs text-muted-foreground">{service.options.length} options • {service.category}</div>
+                <div className="text-[10px] text-muted-foreground">{service.options.length} options • {service.category}</div>
               </div>
             </div>
             <Settings className={`w-4 h-4 text-muted-foreground transition-transform ${editingId === service.id ? "rotate-90" : ""}`} />
@@ -575,7 +764,7 @@ const ServicesTab = ({ services, updateService, addService, removeService }: { s
           <AnimatePresence>
             {editingId === service.id && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                <ServiceEditor service={service} onSave={async (s) => { await updateService(s); toast.success("Service mis à jour !"); }} onDelete={async () => { await removeService(service.id); toast.success("Service supprimé"); setEditingId(null); }} />
+                <ServiceEditor service={service} onSave={async (s) => { await updateService(s); toast.success("Mis à jour !"); }} onDelete={async () => { await removeService(service.id); toast.success("Supprimé"); setEditingId(null); }} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -601,27 +790,23 @@ const ServiceEditor = ({ service, onSave, onDelete }: { service: Service; onSave
     <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
       <div className="grid grid-cols-[48px_1fr] gap-2">
         <Input value={icon} onChange={(e) => setIcon(e.target.value)} className="text-center rounded-xl" placeholder="🔧" />
-        <Input value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl" placeholder="Nom du service" />
+        <Input value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl" placeholder="Nom" />
       </div>
       <Input value={description} onChange={(e) => setDescription(e.target.value)} className="rounded-xl" placeholder="Description" />
       <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Options & Prix</span>
-          <button onClick={() => setOptions([...options, { id: crypto.randomUUID(), name: "", price: 0, unit: "piece" }])} className="text-xs font-semibold text-primary flex items-center gap-1">
-            <Plus className="w-3 h-3" /> Ajouter
-          </button>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Options & Prix</span>
+          <button onClick={() => setOptions([...options, { id: crypto.randomUUID(), name: "", price: 0, unit: "piece" }])} className="text-xs font-semibold text-primary flex items-center gap-1"><Plus className="w-3 h-3" /> Ajouter</button>
         </div>
         {options.map((opt, idx) => (
           <div key={opt.id} className="flex gap-2 items-center">
             <Input value={opt.name} onChange={(e) => updateOption(idx, "name", e.target.value)} className="rounded-xl text-sm flex-1" placeholder="Nom" />
-            <Input type="number" value={opt.price} onChange={(e) => updateOption(idx, "price", parseInt(e.target.value) || 0)} className="rounded-xl text-sm w-24" placeholder="Prix" />
+            <Input type="number" value={opt.price} onChange={(e) => updateOption(idx, "price", parseInt(e.target.value) || 0)} className="rounded-xl text-sm w-20" placeholder="Prix" />
             <select value={opt.unit || "piece"} onChange={(e) => updateOption(idx, "unit", e.target.value)} className="rounded-xl text-sm bg-muted text-foreground px-2 py-2 border border-border">
               <option value="piece">Pièce</option>
               <option value="kg">Kg</option>
             </select>
-            <button onClick={() => setOptions(options.filter((_, i) => i !== idx))} className="text-destructive hover:text-destructive/80 p-1">
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <button onClick={() => setOptions(options.filter((_, i) => i !== idx))} className="text-destructive p-1"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
         ))}
       </div>
@@ -629,9 +814,7 @@ const ServiceEditor = ({ service, onSave, onDelete }: { service: Service; onSave
         <Button variant="hero" size="sm" className="flex-1 rounded-xl" onClick={() => onSave({ ...service, name, description, icon, options })}>
           <Save className="w-4 h-4" /> Enregistrer
         </Button>
-        <Button variant="destructive" size="sm" className="rounded-xl" onClick={onDelete}>
-          <Trash2 className="w-4 h-4" />
-        </Button>
+        <Button variant="destructive" size="sm" className="rounded-xl" onClick={onDelete}><Trash2 className="w-4 h-4" /></Button>
       </div>
     </div>
   );
@@ -648,18 +831,15 @@ const AddServiceForm = ({ onAdd, onCancel }: { onAdd: (s: Service) => void; onCa
       <h4 className="font-bold text-foreground text-sm">Nouveau service</h4>
       <div className="grid grid-cols-[48px_1fr] gap-2">
         <Input value={icon} onChange={(e) => setIcon(e.target.value)} className="text-center rounded-xl" />
-        <Input value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl" placeholder="Nom du service" />
+        <Input value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl" placeholder="Nom" />
       </div>
       <Input value={description} onChange={(e) => setDescription(e.target.value)} className="rounded-xl" placeholder="Description" />
-      <select value={category} onChange={(e) => setCategory(e.target.value as "auto" | "pressing")} className="w-full rounded-xl text-sm bg-muted text-foreground px-3 py-2.5 border border-border">
+      <select value={category} onChange={(e) => setCategory(e.target.value as any)} className="w-full rounded-xl text-sm bg-muted text-foreground px-3 py-2.5 border border-border">
         <option value="auto">🚗 Auto</option>
         <option value="pressing">👕 Pressing</option>
       </select>
       <div className="flex gap-2">
-        <Button variant="hero" size="sm" className="flex-1 rounded-xl" onClick={() => {
-          if (!name) { toast.error("Nom requis"); return; }
-          onAdd({ id: crypto.randomUUID(), name, description, icon, category, options: [] });
-        }}>
+        <Button variant="hero" size="sm" className="flex-1 rounded-xl" onClick={() => { if (!name) { toast.error("Nom requis"); return; } onAdd({ id: crypto.randomUUID(), name, description, icon, category, options: [] }); }}>
           <Plus className="w-4 h-4" /> Créer
         </Button>
         <Button variant="outline" size="sm" className="rounded-xl" onClick={onCancel}>Annuler</Button>
@@ -668,7 +848,7 @@ const AddServiceForm = ({ onAdd, onCancel }: { onAdd: (s: Service) => void; onCa
   );
 };
 
-// ── Promos Management Tab ──
+// ── Promos Tab ──
 const PromosTab = () => {
   const [promos, setPromos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -696,31 +876,21 @@ const PromosTab = () => {
       min_order: Number(minOrder) || 0,
       max_uses: maxUses ? Number(maxUses) : null,
     });
-    if (error) { toast.error(error.message.includes("duplicate") ? "Ce code existe déjà" : "Erreur"); return; }
-    toast.success("Code promo créé !");
+    if (error) { toast.error(error.message.includes("duplicate") ? "Code existant" : "Erreur"); return; }
+    toast.success("Code créé !");
     setShowAdd(false);
     setCode(""); setDiscountValue(""); setMinOrder(""); setMaxUses("");
     fetchPromos();
   };
 
-  const toggleActive = async (id: string, active: boolean) => {
-    await supabase.from("promo_codes").update({ active: !active }).eq("id", id);
-    fetchPromos();
-  };
-
-  const deletePromo = async (id: string) => {
-    await supabase.from("promo_codes").delete().eq("id", id);
-    toast.success("Code supprimé");
-    fetchPromos();
-  };
+  const toggleActive = async (id: string, active: boolean) => { await supabase.from("promo_codes").update({ active: !active }).eq("id", id); fetchPromos(); };
+  const deletePromo = async (id: string) => { await supabase.from("promo_codes").delete().eq("id", id); toast.success("Supprimé"); fetchPromos(); };
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="font-bold text-foreground">Codes promo</h3>
-        <Button variant="hero" size="sm" className="rounded-xl" onClick={() => setShowAdd(!showAdd)}>
-          <Plus className="w-4 h-4" /> Ajouter
-        </Button>
+        <Button variant="hero" size="sm" className="rounded-xl" onClick={() => setShowAdd(!showAdd)}><Plus className="w-4 h-4" /> Ajouter</Button>
       </div>
 
       <AnimatePresence>
@@ -730,12 +900,12 @@ const PromosTab = () => {
             <div className="grid grid-cols-2 gap-2">
               <select value={discountType} onChange={(e) => setDiscountType(e.target.value as any)} className="rounded-xl text-sm bg-muted text-foreground px-3 py-2.5 border border-border">
                 <option value="percentage">% Pourcentage</option>
-                <option value="fixed">FCFA Montant fixe</option>
+                <option value="fixed">FCFA Fixe</option>
               </select>
               <Input placeholder={discountType === "percentage" ? "Ex: 20" : "Ex: 1000"} value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} className="rounded-xl" type="number" />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Min commande (FCFA)" value={minOrder} onChange={(e) => setMinOrder(e.target.value)} className="rounded-xl" type="number" />
+              <Input placeholder="Min commande" value={minOrder} onChange={(e) => setMinOrder(e.target.value)} className="rounded-xl" type="number" />
               <Input placeholder="Max utilisations" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} className="rounded-xl" type="number" />
             </div>
             <div className="flex gap-2">
@@ -760,12 +930,12 @@ const PromosTab = () => {
               <div>
                 <div className="font-bold text-foreground text-sm flex items-center gap-2">
                   🏷️ {p.code}
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${p.active ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}`}>{p.active ? "Actif" : "Inactif"}</span>
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${p.active ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}`}>{p.active ? "Actif" : "Inactif"}</span>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  -{p.discount_type === "percentage" ? `${p.discount_value}%` : `${Number(p.discount_value).toLocaleString("fr-FR")} FCFA`}
+                <div className="text-[10px] text-muted-foreground mt-1">
+                  -{p.discount_type === "percentage" ? `${p.discount_value}%` : `${Number(p.discount_value).toLocaleString("fr-FR")} F`}
                   {p.min_order > 0 && ` • Min ${Number(p.min_order).toLocaleString("fr-FR")} F`}
-                  {p.max_uses && ` • ${p.used_count}/${p.max_uses} utilisations`}
+                  {p.max_uses && ` • ${p.used_count}/${p.max_uses}`}
                 </div>
               </div>
             </div>
