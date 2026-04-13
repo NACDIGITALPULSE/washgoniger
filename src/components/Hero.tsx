@@ -1,16 +1,36 @@
 import { motion } from "framer-motion";
-import { Car, Shirt, ArrowRight, MapPin, Star, Zap, Phone, Sparkles, Shield, Clock, Award, ChevronRight } from "lucide-react";
+import { Car, Shirt, ArrowRight, MapPin, Star, Zap, Phone, Sparkles, Shield, Clock, Award, ChevronRight, Bell, Moon, Sun, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAppState } from "@/lib/store";
+import { useTheme } from "@/hooks/use-theme";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 
 const Hero = () => {
   const navigate = useNavigate();
   const { services } = useAppState();
+  const { theme, toggleTheme } = useTheme();
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [showNotif, setShowNotif] = useState(false);
 
   const autoServices = services.filter((s) => s.category === "auto");
   const pressingServices = services.filter((s) => s.category === "pressing");
+
+  const savedPhone = localStorage.getItem("washgo_phone");
+
+  useEffect(() => {
+    if (!savedPhone) return;
+    const fetchPoints = async () => {
+      const { data } = await supabase
+        .from("loyalty_points")
+        .select("points")
+        .eq("user_phone", savedPhone);
+      if (data) setLoyaltyPoints(data.reduce((s, r) => s + r.points, 0));
+    };
+    fetchPoints();
+  }, [savedPhone]);
 
   return (
     <section className="relative overflow-hidden bg-background min-h-screen">
@@ -18,22 +38,19 @@ const Hero = () => {
       <div className="hero-gradient relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.18),transparent_60%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(0,0,0,0.12),transparent_60%)]" />
-        <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
-        <div className="absolute -bottom-12 -left-20 w-48 h-48 rounded-full bg-white/5 blur-3xl" />
 
-        <div className="relative container max-w-lg mx-auto px-5 pt-6 pb-16">
+        <div className="relative container max-w-lg mx-auto px-5 pt-5 pb-14">
           {/* Top bar */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="flex items-center justify-between mb-6"
+            className="flex items-center justify-between mb-5"
           >
             <div className="flex items-center gap-2.5">
               <motion.img
                 src={logo}
                 alt="WashGo Niger"
-                className="w-11 h-11 rounded-xl object-contain shadow-lg bg-white/10 p-0.5"
+                className="w-10 h-10 rounded-xl object-contain shadow-lg bg-white/10 p-0.5"
                 whileHover={{ rotate: [0, -5, 5, 0] }}
               />
               <div>
@@ -43,23 +60,57 @@ const Hero = () => {
                 <p className="text-primary-foreground/40 text-[10px] font-medium">Lavage · Vidange · Pressing</p>
               </div>
             </div>
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-              className="flex items-center gap-1 rounded-full bg-primary-foreground/15 backdrop-blur-sm px-3 py-1.5 border border-primary-foreground/15"
-            >
-              <MapPin className="w-3 h-3 text-primary-foreground/70" />
-              <span className="text-[11px] font-semibold text-primary-foreground/80">Niamey</span>
-            </motion.div>
+            <div className="flex items-center gap-1.5">
+              {/* Dark mode toggle */}
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={toggleTheme}
+                className="w-8 h-8 rounded-full bg-primary-foreground/15 backdrop-blur-sm flex items-center justify-center border border-primary-foreground/15"
+              >
+                {theme === "dark" ? <Sun className="w-3.5 h-3.5 text-primary-foreground/80" /> : <Moon className="w-3.5 h-3.5 text-primary-foreground/80" />}
+              </motion.button>
+
+              {/* Notification bell */}
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => { setShowNotif(!showNotif); navigate("/my-orders"); }}
+                className="w-8 h-8 rounded-full bg-primary-foreground/15 backdrop-blur-sm flex items-center justify-center border border-primary-foreground/15 relative"
+              >
+                <Bell className="w-3.5 h-3.5 text-primary-foreground/80" />
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
+              </motion.button>
+
+              {/* Location badge */}
+              <div className="flex items-center gap-1 rounded-full bg-primary-foreground/15 backdrop-blur-sm px-2.5 py-1.5 border border-primary-foreground/15">
+                <MapPin className="w-3 h-3 text-primary-foreground/70" />
+                <span className="text-[11px] font-semibold text-primary-foreground/80">Niamey</span>
+              </div>
+            </div>
           </motion.div>
+
+          {/* Loyalty points bar */}
+          {savedPhone && loyaltyPoints > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-4 flex items-center gap-2 bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-primary-foreground/10"
+            >
+              <Gift className="w-4 h-4 text-yellow-300" />
+              <span className="text-xs font-semibold text-primary-foreground/80">
+                {loyaltyPoints} points fidélité
+              </span>
+              <span className="text-[10px] text-primary-foreground/50 ml-auto">
+                = {Math.floor(loyaltyPoints / 100) * 500} F de réduction
+              </span>
+            </motion.div>
+          )}
 
           {/* Hero text */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.5 }}
-            className="text-center mb-6"
+            transition={{ delay: 0.15 }}
+            className="text-center mb-5"
           >
             <h2 className="text-primary-foreground font-extrabold text-[22px] leading-tight mb-2">
               Votre véhicule mérite le meilleur soin ✨
@@ -69,7 +120,7 @@ const Hero = () => {
             </p>
           </motion.div>
 
-          {/* CTA buttons - well centered */}
+          {/* CTA buttons */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -104,7 +155,7 @@ const Hero = () => {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35, duration: 0.4 }}
+          transition={{ delay: 0.35 }}
           className="glass-card rounded-2xl p-3.5 flex items-center justify-around shadow-lg"
         >
           {[
@@ -132,14 +183,9 @@ const Hero = () => {
         </motion.div>
       </div>
 
-      {/* Trust badges - scrollable */}
+      {/* Trust badges */}
       <div className="container max-w-lg mx-auto px-4 mt-4">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="flex gap-2 justify-center flex-wrap"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="flex gap-2 justify-center flex-wrap">
           {[
             { icon: Shield, text: "Paiement sécurisé", bg: "bg-primary/8 text-primary" },
             { icon: Clock, text: "Service rapide", bg: "bg-secondary/8 text-secondary" },
@@ -185,14 +231,14 @@ const Hero = () => {
             <div className="flex-1">
               <div className="flex items-center gap-1.5 mb-1">
                 <Sparkles className="w-4 h-4 text-primary-foreground/80" />
-                <span className="text-[10px] font-bold text-primary-foreground/70 uppercase tracking-wider">Offre spéciale</span>
+                <span className="text-[10px] font-bold text-primary-foreground/70 uppercase tracking-wider">Programme fidélité</span>
               </div>
               <p className="text-primary-foreground font-bold text-base leading-snug">
-                -20% sur votre 1ère commande pressing
+                Gagnez des points à chaque commande !
               </p>
-              <p className="text-primary-foreground/50 text-xs mt-1">Utilisez le code BIENVENUE</p>
+              <p className="text-primary-foreground/50 text-xs mt-1">1 commande = 10 points • 100 pts = 500 FCFA</p>
             </div>
-            <div className="text-4xl">🎉</div>
+            <div className="text-4xl">🎁</div>
           </div>
         </motion.div>
 
@@ -210,7 +256,8 @@ const Hero = () => {
             {[
               { step: "1", title: "Choisissez", desc: "Sélectionnez vos services et options", emoji: "👆" },
               { step: "2", title: "Commandez", desc: "Remplissez vos infos et confirmez", emoji: "📝" },
-              { step: "3", title: "Profitez", desc: "On s'occupe de tout, chez vous ou sur place", emoji: "✅" },
+              { step: "3", title: "Suivez", desc: "Trackez votre commande en temps réel", emoji: "📍" },
+              { step: "4", title: "Profitez", desc: "Récupérez votre véhicule impeccable", emoji: "✅" },
             ].map((item, i) => (
               <motion.div
                 key={item.step}

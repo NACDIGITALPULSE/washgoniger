@@ -107,6 +107,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
     if (!error) {
       setOrders((prev) => [order, ...prev]);
+      // Award loyalty points (10 points per order)
+      await supabase.from("loyalty_points").insert({
+        user_phone: order.clientPhone,
+        points: 10,
+        source: "order",
+        order_id: order.id,
+      });
     }
   };
 

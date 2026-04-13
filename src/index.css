@@ -54,6 +54,44 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
   }
+
+  .dark {
+    --background: 215 25% 8%;
+    --foreground: 210 15% 93%;
+
+    --card: 215 25% 12%;
+    --card-foreground: 210 15% 93%;
+
+    --popover: 215 25% 12%;
+    --popover-foreground: 210 15% 93%;
+
+    --primary: 215 80% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 155 60% 45%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 215 20% 18%;
+    --muted-foreground: 210 10% 60%;
+
+    --accent: 155 40% 18%;
+    --accent-foreground: 155 60% 75%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 20% 20%;
+    --input: 215 20% 20%;
+    --ring: 215 80% 55%;
+
+    --hero-gradient: linear-gradient(135deg, hsl(215 80% 42%), hsl(155 60% 35%));
+    --card-shadow: 0 4px 24px -4px hsl(0 0% 0% / 0.3);
+    --card-shadow-hover: 0 8px 32px -4px hsl(0 0% 0% / 0.4);
+    --success: 155 60% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 85% 50%;
+    --warning-foreground: 0 0% 100%;
+  }
 }
 
 @layer base {
@@ -86,5 +124,13 @@
 
   .glass-card:hover {
     box-shadow: var(--card-shadow-hover);
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

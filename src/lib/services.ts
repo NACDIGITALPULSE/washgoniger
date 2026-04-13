@@ -44,12 +44,22 @@ export interface Order {
   quantity: number;
   location: "sur_place" | "domicile";
   address?: string;
-  payment: "cash" | "airtel_money" | "moov" | "zamani" | "nita" | "amanata";
-  status: "pending" | "accepted" | "in_progress" | "completed" | "cancelled";
+  payment: "cash" | "nita" | "amanata";
+  status: "pending" | "accepted" | "in_progress" | "ready" | "delivered" | "completed" | "cancelled";
   createdAt: Date;
   total: number;
   promoCode?: string;
   discount?: number;
+  receiptUrl?: string;
+}
+
+export interface LoyaltyPoint {
+  id: string;
+  user_phone: string;
+  points: number;
+  source: string;
+  order_id?: string;
+  created_at: string;
 }
 
 export const DEFAULT_SERVICES: Service[] = [

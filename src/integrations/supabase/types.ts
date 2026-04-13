@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      loyalty_points: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string | null
+          points: number
+          source: string
+          user_phone: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          points?: number
+          source?: string
+          user_phone: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          points?: number
+          source?: string
+          user_phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_points_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           address: string | null
@@ -27,6 +62,7 @@ export type Database = {
           payment: string
           promo_code: string | null
           quantity: number
+          receipt_url: string | null
           selected_option: Json
           service_icon: string
           service_id: string
@@ -46,6 +82,7 @@ export type Database = {
           payment?: string
           promo_code?: string | null
           quantity?: number
+          receipt_url?: string | null
           selected_option: Json
           service_icon?: string
           service_id: string
@@ -65,12 +102,37 @@ export type Database = {
           payment?: string
           promo_code?: string | null
           quantity?: number
+          receipt_url?: string | null
           selected_option?: Json
           service_icon?: string
           service_id?: string
           service_name?: string
           status?: string
           total?: number
+        }
+        Relationships: []
+      }
+      payment_receipts: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          receipt_url: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          receipt_url: string
+          uploaded_by?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          receipt_url?: string
+          uploaded_by?: string
         }
         Relationships: []
       }

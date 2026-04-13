@@ -21,7 +21,7 @@ const OrderPage = () => {
 
   const [selectedOptions, setSelectedOptions] = useState<Map<string, SelectedOptionWithQty>>(new Map());
   const [location, setLocation] = useState<"sur_place" | "domicile">("sur_place");
-  const [payment, setPayment] = useState<Order["payment"]>("cash");
+  const [payment, setPayment] = useState<"cash" | "nita" | "amanata">("cash");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -208,9 +208,6 @@ const OrderPage = () => {
 
   const paymentMethods = [
     { id: "cash" as const, label: "Cash", emoji: "💵" },
-    { id: "airtel_money" as const, label: "Airtel Money", emoji: "📱" },
-    { id: "moov" as const, label: "Moov Money", emoji: "📱" },
-    { id: "zamani" as const, label: "Zamani", emoji: "📱" },
     { id: "nita" as const, label: "Nita", emoji: "💳" },
     { id: "amanata" as const, label: "Amanata", emoji: "💳" },
   ];
