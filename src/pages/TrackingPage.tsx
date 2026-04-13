@@ -4,7 +4,7 @@ import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { motion } from "framer-motion";
-import { Search, Phone, MapPin, Clock, CheckCircle2, Truck, Package, XCircle } from "lucide-react";
+import { Search, Phone, MapPin, Clock, CheckCircle2, Truck, Package, XCircle, PackageCheck, Home } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Order } from "@/lib/services";
@@ -13,13 +13,15 @@ const trackingSteps = [
   { status: "pending", label: "En attente", icon: Clock, desc: "Votre commande a été reçue" },
   { status: "accepted", label: "Acceptée", icon: CheckCircle2, desc: "Commande confirmée par notre équipe" },
   { status: "in_progress", label: "En cours", icon: Truck, desc: "Votre prestation est en cours" },
+  { status: "ready", label: "Prête", icon: PackageCheck, desc: "Prête pour récupération / livraison" },
+  { status: "delivered", label: "Livrée", icon: Home, desc: "Renvoyée chez le client" },
   { status: "completed", label: "Terminée", icon: Package, desc: "Prestation terminée avec succès" },
 ];
 
-const statusIndex: Record<string, number> = { pending: 0, accepted: 1, in_progress: 2, completed: 3, cancelled: -1 };
+const statusIndex: Record<string, number> = { pending: 0, accepted: 1, in_progress: 2, ready: 3, delivered: 4, completed: 5, cancelled: -1 };
 
 const TrackingPage = () => {
-  const [orderNumber, setOrderNumber] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
@@ -41,14 +43,17 @@ const TrackingPage = () => {
   });
 
   const search = async () => {
-    if (!orderNumber.trim()) return;
+    if (!searchInput.trim()) return;
     setLoading(true);
     setSearched(true);
-    const q = orderNumber.trim().toUpperCase();
+    const q = searchInput.trim();
+    
+    // Search by order number, id, or phone number
     const { data } = await supabase
       .from("orders")
       .select("*")
-      .or(`order_number.eq.${q},id.eq.${q}`)
+      .or(`order_number.eq.${q.toUpperCase()},id.eq.${q.toUpperCase()},client_phone.eq.${q}`)
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     setOrder(data ? parseOrder(data) : null);
@@ -77,16 +82,16 @@ const TrackingPage = () => {
         {/* Search */}
         <div className="glass-card rounded-2xl p-5 mb-6">
           <h3 className="font-bold text-foreground text-sm mb-1">Suivez votre commande</h3>
-          <p className="text-xs text-muted-foreground mb-4">Entrez votre numéro de commande pour voir le statut en temps réel</p>
+          <p className="text-xs text-muted-foreground mb-4">Entrez votre n° de commande ou numéro de téléphone</p>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Ex: WG-240101-ABC1"
-                value={orderNumber}
-                onChange={(e) => setOrderNumber(e.target.value.toUpperCase())}
+                placeholder="N° commande ou téléphone"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && search()}
-                className="pl-10 rounded-xl uppercase font-mono text-sm"
+                className="pl-10 rounded-xl font-mono text-sm"
               />
             </div>
             <Button variant="hero" className="rounded-xl" onClick={search}>
@@ -150,12 +155,11 @@ const TrackingPage = () => {
                     const Icon = step.icon;
                     return (
                       <div key={step.status} className="flex gap-4">
-                        {/* Line + dot */}
                         <div className="flex flex-col items-center">
                           <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            transition={{ delay: i * 0.15 }}
+                            transition={{ delay: i * 0.12 }}
                             className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
                               isCurrent ? "hero-gradient shadow-lg" : isCompleted ? "bg-success" : "bg-muted"
                             }`}
@@ -163,11 +167,10 @@ const TrackingPage = () => {
                             <Icon className={`w-5 h-5 ${isCompleted || isCurrent ? "text-primary-foreground" : "text-muted-foreground"}`} />
                           </motion.div>
                           {i < trackingSteps.length - 1 && (
-                            <div className={`w-0.5 h-10 ${isCompleted && currentStep > i ? "bg-success" : "bg-muted"}`} />
+                            <div className={`w-0.5 h-8 ${isCompleted && currentStep > i ? "bg-success" : "bg-muted"}`} />
                           )}
                         </div>
-                        {/* Content */}
-                        <div className="pb-6">
+                        <div className="pb-4">
                           <div className={`font-bold text-sm ${isCurrent ? "text-primary" : isCompleted ? "text-foreground" : "text-muted-foreground"}`}>
                             {step.label}
                           </div>

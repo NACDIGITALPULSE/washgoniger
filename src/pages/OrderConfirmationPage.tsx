@@ -1,9 +1,11 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle2, MessageCircle, Home, ClipboardList, Navigation, Download } from "lucide-react";
+import { CheckCircle2, Home, ClipboardList, Navigation, Download, Upload, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Order } from "@/lib/services";
 import { toast } from "sonner";
+import { useState, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import jsPDF from "jspdf";
 
 const ADMIN_WHATSAPP = "22788082987";
@@ -12,6 +14,9 @@ const OrderConfirmationPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const order = location.state?.order as Order | undefined;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [receiptUploaded, setReceiptUploaded] = useState(false);
 
   if (!order) {
     navigate("/");
@@ -28,8 +33,7 @@ const OrderConfirmationPage = () => {
   });
 
   const paymentLabels: Record<string, string> = {
-    cash: "Cash", airtel_money: "Airtel Money", moov: "Moov Money",
-    zamani: "Zamani", nita: "Nita", amanata: "Amanata"
+    cash: "Cash", nita: "Nita", amanata: "Amanata"
   };
 
   const downloadInvoicePDF = () => {
@@ -37,7 +41,6 @@ const OrderConfirmationPage = () => {
     const w = doc.internal.pageSize.getWidth();
     let y = 15;
 
-    // Header
     doc.setFontSize(22);
     doc.setTextColor(21, 101, 192);
     doc.text("WashGo", w / 2 - 18, y);
@@ -48,7 +51,6 @@ const OrderConfirmationPage = () => {
     y += 6;
     doc.text("Services de lavage auto & pressing", w / 2, y, { align: "center" });
 
-    // Invoice number box
     y += 10;
     doc.setFillColor(245, 245, 245);
     doc.roundedRect(20, y - 4, w - 40, 18, 3, 3, "F");
@@ -62,7 +64,6 @@ const OrderConfirmationPage = () => {
     doc.setTextColor(120);
     doc.text(orderDate, w / 2, y + 14, { align: "center" });
 
-    // Client info
     y += 24;
     doc.setFontSize(10);
     doc.setTextColor(50);
@@ -77,7 +78,6 @@ const OrderConfirmationPage = () => {
     y += 6;
     doc.text(`Paiement : ${paymentLabels[order.payment] || order.payment}`, 15, y);
 
-    // Table header
     y += 10;
     doc.setFillColor(21, 101, 192);
     doc.rect(15, y - 4, w - 30, 8, "F");
@@ -87,7 +87,6 @@ const OrderConfirmationPage = () => {
     doc.text("Qté", w - 50, y + 1, { align: "right" });
     doc.text("Prix", w - 18, y + 1, { align: "right" });
 
-    // Service name
     y += 8;
     doc.setFillColor(248, 249, 250);
     doc.rect(15, y - 4, w - 30, 7, "F");
@@ -95,7 +94,6 @@ const OrderConfirmationPage = () => {
     doc.setFontSize(10);
     doc.text(`${order.service.icon} ${order.service.name}`, 18, y + 1);
 
-    // Options
     y += 7;
     doc.setFontSize(9);
     doc.setTextColor(60);
@@ -109,7 +107,6 @@ const OrderConfirmationPage = () => {
       y += 8;
     });
 
-    // Total
     y += 2;
     doc.setDrawColor(21, 101, 192);
     doc.setLineWidth(0.5);
@@ -119,14 +116,13 @@ const OrderConfirmationPage = () => {
     doc.text("TOTAL", 18, y + 4);
     doc.text(`${order.total.toLocaleString("fr-FR")} FCFA`, w - 18, y + 4, { align: "right" });
 
-    // Footer
     y += 18;
     doc.setDrawColor(220);
     doc.line(15, y, w - 15, y);
     y += 6;
     doc.setFontSize(9);
     doc.setTextColor(130);
-    doc.text("Merci pour votre confiance !", w / 2, y, { align: "center" });
+    doc.text("Merci pour votre confiance ! +10 points fidélité 🎁", w / 2, y, { align: "center" });
     y += 5;
     doc.setTextColor(37, 211, 102);
     doc.text("WhatsApp : +227 88 08 29 87", w / 2, y, { align: "center" });
@@ -138,9 +134,31 @@ const OrderConfirmationPage = () => {
     toast.success("Facture PDF téléchargée !");
   };
 
-  const contactAdmin = () => {
-    const invoiceText = `🧾 *FACTURE WashGo Niger*\n\n📋 N° *${orderNumber}*\n📅 ${orderDate}\n\n👤 ${order.clientName}\n📞 ${order.clientPhone}\n\n🔧 *${order.service.icon} ${order.service.name}*\n${optionsList.map(o => `  • ${o.option.name} ×${o.quantity} — ${(o.option.price * o.quantity).toLocaleString("fr-FR")} F`).join("\n")}\n\n💰 *TOTAL : ${order.total.toLocaleString("fr-FR")} FCFA*\n📍 ${order.location === "domicile" ? "À domicile" : "Sur place"}\n💳 ${paymentLabels[order.payment] || order.payment}\n\n─────────────────\n🚗 *WashGo Niger*\n📱 +227 88 08 29 87\nMerci pour votre confiance ! 🙏`;
-    window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(invoiceText)}`, "_blank");
+  const uploadReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${order.id}/${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabase.storage.from("receipts").upload(path, file);
+    if (uploadError) {
+      toast.error("Erreur lors de l'upload du reçu");
+      setUploading(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("receipts").getPublicUrl(path);
+    const receiptUrl = urlData.publicUrl;
+
+    await supabase.from("payment_receipts").insert({
+      order_id: order.id,
+      receipt_url: receiptUrl,
+      uploaded_by: "client",
+    });
+    await supabase.from("orders").update({ receipt_url: receiptUrl }).eq("id", order.id);
+    
+    setReceiptUploaded(true);
+    setUploading(false);
+    toast.success("Reçu de paiement envoyé !");
   };
 
   const shareLocation = () => {
@@ -187,6 +205,15 @@ const OrderConfirmationPage = () => {
       >
         N° {orderNumber}
       </motion.p>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.38 }}
+        className="flex items-center gap-1.5 mb-4 bg-secondary/10 px-3 py-1.5 rounded-full"
+      >
+        <span className="text-xs font-semibold text-secondary">+10 points fidélité 🎁</span>
+      </motion.div>
 
       <motion.p
         initial={{ opacity: 0, y: 10 }}
@@ -245,13 +272,39 @@ const OrderConfirmationPage = () => {
           Télécharger la facture PDF
         </Button>
 
-        <Button
-          onClick={contactAdmin}
-          className="w-full rounded-2xl h-12 bg-[#25D366] hover:bg-[#20BD5A] text-white"
-        >
-          <MessageCircle className="w-5 h-5 mr-2" />
-          Envoyer la facture par WhatsApp
-        </Button>
+        {/* Receipt upload for Nita/Amanata */}
+        {(order.payment === "nita" || order.payment === "amanata") && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf"
+              className="hidden"
+              onChange={uploadReceipt}
+            />
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading || receiptUploaded}
+              className="w-full rounded-2xl h-12 bg-primary hover:bg-primary/90"
+            >
+              {receiptUploaded ? (
+                <><FileCheck className="w-4 h-4 mr-1.5" /> Reçu envoyé ✅</>
+              ) : uploading ? (
+                <><div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-1.5" /> Envoi...</>
+              ) : (
+                <><Upload className="w-4 h-4 mr-1.5" /> Joindre le reçu de paiement</>
+              )}
+            </Button>
+          </>
+        )}
+
+        {/* Cash receipt download */}
+        {order.payment === "cash" && (
+          <Button onClick={downloadInvoicePDF} variant="outline" className="w-full rounded-2xl h-12 border-success/30 text-success">
+            <Download className="w-4 h-4 mr-1.5" />
+            Télécharger le reçu Cash
+          </Button>
+        )}
 
         {order.location === "domicile" && (
           <Button
