@@ -73,7 +73,7 @@ const Hero = () => {
               {/* Notification bell */}
               <motion.button
                 whileTap={{ scale: 0.9 }}
-                onClick={() => { setShowNotif(!showNotif); navigate("/my-orders"); }}
+                onClick={() => navigate("/notifications")}
                 className="w-8 h-8 rounded-full bg-primary-foreground/15 backdrop-blur-sm flex items-center justify-center border border-primary-foreground/15 relative"
               >
                 <Bell className="w-3.5 h-3.5 text-primary-foreground/80" />

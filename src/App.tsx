@@ -12,6 +12,7 @@ import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminPage from "./pages/AdminPage";
 import TrackingPage from "./pages/TrackingPage";
+import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
               <Route path="/my-orders" element={<MyOrdersPage />} />
               <Route path="/tracking" element={<TrackingPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/login" element={<AdminLoginPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="*" element={<NotFound />} />

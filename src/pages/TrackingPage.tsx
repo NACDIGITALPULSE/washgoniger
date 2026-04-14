@@ -22,9 +22,11 @@ const statusIndex: Record<string, number> = { pending: 0, accepted: 1, in_progre
 
 const TrackingPage = () => {
   const [searchInput, setSearchInput] = useState("");
+  const [phoneInput, setPhoneInput] = useState(() => localStorage.getItem("washgo_phone") || "");
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
 
   const parseOrder = (row: any): Order => ({
     id: row.id,
@@ -43,20 +45,43 @@ const TrackingPage = () => {
   });
 
   const search = async () => {
-    if (!searchInput.trim()) return;
+    if (!searchInput.trim() || !phoneInput.trim()) return;
     setLoading(true);
     setSearched(true);
     const q = searchInput.trim();
+    const phone = phoneInput.trim();
     
-    // Search by order number, id, or phone number
+    // Search by order number or id, but verify phone matches
     const { data } = await supabase
       .from("orders")
       .select("*")
-      .or(`order_number.eq.${q.toUpperCase()},id.eq.${q.toUpperCase()},client_phone.eq.${q}`)
+      .or(`order_number.eq.${q.toUpperCase()},id.eq.${q.toUpperCase()}`)
+      .eq("client_phone", phone)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    setOrder(data ? parseOrder(data) : null);
+    
+    if (data) {
+      setOrder(parseOrder(data));
+      setPhoneVerified(true);
+      localStorage.setItem("washgo_phone", phone);
+    } else {
+      // Also try searching by phone only to show all orders
+      const { data: phoneData } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("client_phone", q.startsWith("WG") ? phone : q)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (phoneData) {
+        setOrder(parseOrder(phoneData));
+        setPhoneVerified(true);
+        localStorage.setItem("washgo_phone", phoneData.client_phone);
+      } else {
+        setOrder(null);
+      }
+    }
     setLoading(false);
   };
 
@@ -82,21 +107,32 @@ const TrackingPage = () => {
         {/* Search */}
         <div className="glass-card rounded-2xl p-5 mb-6">
           <h3 className="font-bold text-foreground text-sm mb-1">Suivez votre commande</h3>
-          <p className="text-xs text-muted-foreground mb-4">Entrez votre n° de commande ou numéro de téléphone</p>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+          <p className="text-xs text-muted-foreground mb-4">Entrez votre téléphone et n° de commande</p>
+          <div className="space-y-2">
+            <div className="relative">
+              <Phone className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="N° commande ou téléphone"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && search()}
-                className="pl-10 rounded-xl font-mono text-sm"
+                placeholder="Votre numéro de téléphone"
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value)}
+                className="pl-10 rounded-xl text-sm"
               />
             </div>
-            <Button variant="hero" className="rounded-xl" onClick={search}>
-              Suivre
-            </Button>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="N° commande (ex: WG-...)"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && search()}
+                  className="pl-10 rounded-xl font-mono text-sm"
+                />
+              </div>
+              <Button variant="hero" className="rounded-xl" onClick={search}>
+                Suivre
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -179,10 +215,12 @@ const TrackingPage = () => {
                             <motion.div
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
-                              className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full"
+                              className={`mt-1 inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                step.status === "completed" ? "text-success bg-success/10" : "text-primary bg-primary/10"
+                              }`}
                             >
-                              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                              En cours
+                              <span className={`w-1.5 h-1.5 rounded-full ${step.status === "completed" ? "bg-success" : "bg-primary animate-pulse"}`} />
+                              {step.status === "completed" ? "✅ Terminée" : "● En cours"}
                             </motion.div>
                           )}
                         </div>
