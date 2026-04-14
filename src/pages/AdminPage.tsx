@@ -994,7 +994,7 @@ const DataTab = () => {
     if (!confirm(`⚠️ Supprimer TOUTES les données de "${label}" ? Cette action est irréversible !`)) return;
     if (!confirm(`Êtes-vous VRAIMENT sûr ? Toutes les ${label} seront supprimées définitivement.`)) return;
     setPurging(true);
-    const { error } = await supabase.from(table).delete().neq("id", "___none___");
+    const { error } = await supabase.from(table as any).delete().gte("created_at", "1970-01-01");
     if (!error) { toast.success(`${label} supprimées`); } else { toast.error("Erreur: " + error.message); }
     setPurging(false);
   };
@@ -1003,10 +1003,10 @@ const DataTab = () => {
     if (!confirm("⚠️ ATTENTION: Supprimer TOUTES les données (commandes, reçus, points fidélité, codes promo) ?")) return;
     if (!confirm("Dernière confirmation: cette action est IRRÉVERSIBLE. Continuer ?")) return;
     setPurging(true);
-    await supabase.from("payment_receipts").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-    await supabase.from("loyalty_points").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-    await supabase.from("orders").delete().neq("id", "___none___");
-    await supabase.from("promo_codes").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    await supabase.from("payment_receipts").delete().gte("created_at", "1970-01-01");
+    await supabase.from("loyalty_points").delete().gte("created_at", "1970-01-01");
+    await supabase.from("orders").delete().gte("created_at", "1970-01-01");
+    await supabase.from("promo_codes").delete().gte("created_at", "1970-01-01");
     toast.success("Toutes les données ont été supprimées");
     setPurging(false);
     window.location.reload();
