@@ -697,7 +697,14 @@ const ReceiptsTab = ({ orders }: { orders: Order[] }) => {
   }, []);
 
   const cashOrders = orders.filter(o => o.payment === "cash" && o.status !== "cancelled");
-  const ordersWithReceipts = orders.filter(o => receipts.some(r => r.order_id === o.id));
+
+  const downloadReceipt = (url: string, name: string) => {
+    const link = document.createElement("a");
+    link.href = url;
+    link.target = "_blank";
+    link.download = name;
+    link.click();
+  };
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
@@ -709,7 +716,7 @@ const ReceiptsTab = ({ orders }: { orders: Order[] }) => {
         ))}
       </div>
 
-      {/* Cash receipts (auto-generated) */}
+      {/* Cash receipts */}
       {(filter === "all" || filter === "cash") && (
         <div className="glass-card rounded-2xl p-5">
           <h3 className="font-bold text-foreground mb-3 text-sm">💵 Reçus Cash ({cashOrders.length})</h3>
@@ -750,9 +757,14 @@ const ReceiptsTab = ({ orders }: { orders: Order[] }) => {
                       <div className="text-[10px] text-muted-foreground">{order?.service.name || ""} • {order?.total.toLocaleString("fr-FR") || 0} F • {receipt.uploaded_by}</div>
                       <div className="text-[10px] text-muted-foreground">{new Date(receipt.created_at).toLocaleDateString("fr-FR")}</div>
                     </div>
-                    <a href={receipt.receipt_url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg hover:bg-muted">
-                      <Eye className="w-4 h-4 text-primary" />
-                    </a>
+                    <div className="flex gap-1 shrink-0">
+                      <a href={receipt.receipt_url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg hover:bg-muted">
+                        <Eye className="w-4 h-4 text-primary" />
+                      </a>
+                      <button onClick={() => downloadReceipt(receipt.receipt_url, `recu-${order?.orderNumber || receipt.id}.jpg`)} className="p-1.5 rounded-lg hover:bg-muted">
+                        <Download className="w-4 h-4 text-success" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
