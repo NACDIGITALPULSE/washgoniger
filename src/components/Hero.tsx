@@ -43,6 +43,22 @@ const Hero = () => {
     fetchPoints();
   }, [savedPhone]);
 
+  const redeemReward = async (reward: typeof REWARDS[0]) => {
+    if (loyaltyPoints < reward.points) { toast.error("Points insuffisants"); return; }
+    if (!savedPhone) return;
+    setRedeeming(true);
+    const { error } = await supabase.from("loyalty_points").insert({
+      user_phone: savedPhone,
+      points: -reward.points,
+      source: `reward:${reward.label}`,
+    });
+    if (!error) {
+      setLoyaltyPoints((prev) => prev - reward.points);
+      toast.success(`🎁 ${reward.label} débloqué !`, { description: "Applicable à votre prochaine commande" });
+    } else { toast.error("Erreur lors de l'échange"); }
+    setRedeeming(false);
+  };
+
   return (
     <section className="relative overflow-hidden bg-background min-h-screen">
       {/* Hero Header */}
