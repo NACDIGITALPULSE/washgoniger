@@ -294,15 +294,15 @@ const Hero = () => {
           <div className="relative flex items-center gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-1.5 mb-1">
-                <Sparkles className="w-4 h-4 text-primary-foreground/80" />
-                <span className="text-[10px] font-bold text-primary-foreground/70 uppercase tracking-wider">Programme fidélité</span>
+                <Trophy className="w-4 h-4 text-primary-foreground/80" />
+                <span className="text-[10px] font-bold text-primary-foreground/70 uppercase tracking-wider">Récompenses fidélité</span>
               </div>
               <p className="text-primary-foreground font-bold text-base leading-snug">
-                Gagnez des points à chaque commande !
+                Échangez vos points contre des cadeaux !
               </p>
-              <p className="text-primary-foreground/50 text-xs mt-1">1 commande = 10 points • 100 pts = 500 FCFA</p>
+              <p className="text-primary-foreground/50 text-xs mt-1">50 pts = 500 F • 200 pts = Service gratuit</p>
             </div>
-            <div className="text-4xl">🎁</div>
+            <div className="text-4xl">🏆</div>
           </div>
         </motion.div>
 
