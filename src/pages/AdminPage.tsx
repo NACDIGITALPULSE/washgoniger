@@ -92,6 +92,7 @@ const AdminPage = () => {
     { key: "receipts", label: "Reçus", icon: "🧾" },
     { key: "services", label: "Svcs", icon: "⚙️" },
     { key: "promos", label: "Promos", icon: "🏷️" },
+    { key: "data", label: "Data", icon: "🗑️" },
   ];
 
   return (
