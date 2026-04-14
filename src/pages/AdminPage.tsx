@@ -6,7 +6,7 @@ import {
   BarChart3, ShoppingBag, TrendingUp, CheckCircle2, Clock, XCircle, Settings,
   Plus, Trash2, Save, ArrowLeft, LogOut, Bell, MessageCircle, Search, Filter,
   Users, DollarSign, Send, UserCheck, Eye, EyeOff, Key, Mail, Calendar,
-  Activity, Target, Percent, Archive, FileImage, Download, PackageCheck, Home as HomeIcon
+  Activity, Target, Percent, Archive, FileImage, Download, PackageCheck, Home as HomeIcon, AlertTriangle, Database
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -40,7 +40,7 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 const ADMIN_WHATSAPP = "22788082987";
 const CHART_COLORS = ["hsl(215, 80%, 48%)", "hsl(155, 60%, 42%)", "hsl(38, 92%, 50%)", "hsl(0, 84%, 60%)", "hsl(270, 60%, 50%)", "hsl(190, 70%, 45%)"];
 
-type TabKey = "dashboard" | "orders" | "users" | "notifications" | "receipts" | "services" | "promos";
+type TabKey = "dashboard" | "orders" | "users" | "notifications" | "receipts" | "services" | "promos" | "data";
 
 const AdminPage = () => {
   const { orders, updateOrderStatus, services, updateService, addService, removeService } = useAppState();
@@ -92,6 +92,7 @@ const AdminPage = () => {
     { key: "receipts", label: "Reçus", icon: "🧾" },
     { key: "services", label: "Svcs", icon: "⚙️" },
     { key: "promos", label: "Promos", icon: "🏷️" },
+    { key: "data", label: "Data", icon: "🗑️" },
   ];
 
   return (
@@ -161,6 +162,7 @@ const AdminPage = () => {
             {tab === "receipts" && <ReceiptsTab key="rcpt" orders={orders} />}
             {tab === "services" && <ServicesTab key="svc" services={services} updateService={updateService} addService={addService} removeService={removeService} />}
             {tab === "promos" && <PromosTab key="promo" />}
+            {tab === "data" && <DataTab key="data" />}
           </AnimatePresence>
         </div>
       </div>
@@ -697,7 +699,14 @@ const ReceiptsTab = ({ orders }: { orders: Order[] }) => {
   }, []);
 
   const cashOrders = orders.filter(o => o.payment === "cash" && o.status !== "cancelled");
-  const ordersWithReceipts = orders.filter(o => receipts.some(r => r.order_id === o.id));
+
+  const downloadReceipt = (url: string, name: string) => {
+    const link = document.createElement("a");
+    link.href = url;
+    link.target = "_blank";
+    link.download = name;
+    link.click();
+  };
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
@@ -709,7 +718,7 @@ const ReceiptsTab = ({ orders }: { orders: Order[] }) => {
         ))}
       </div>
 
-      {/* Cash receipts (auto-generated) */}
+      {/* Cash receipts */}
       {(filter === "all" || filter === "cash") && (
         <div className="glass-card rounded-2xl p-5">
           <h3 className="font-bold text-foreground mb-3 text-sm">💵 Reçus Cash ({cashOrders.length})</h3>
@@ -750,9 +759,14 @@ const ReceiptsTab = ({ orders }: { orders: Order[] }) => {
                       <div className="text-[10px] text-muted-foreground">{order?.service.name || ""} • {order?.total.toLocaleString("fr-FR") || 0} F • {receipt.uploaded_by}</div>
                       <div className="text-[10px] text-muted-foreground">{new Date(receipt.created_at).toLocaleDateString("fr-FR")}</div>
                     </div>
-                    <a href={receipt.receipt_url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg hover:bg-muted">
-                      <Eye className="w-4 h-4 text-primary" />
-                    </a>
+                    <div className="flex gap-1 shrink-0">
+                      <a href={receipt.receipt_url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg hover:bg-muted">
+                        <Eye className="w-4 h-4 text-primary" />
+                      </a>
+                      <button onClick={() => downloadReceipt(receipt.receipt_url, `recu-${order?.orderNumber || receipt.id}.jpg`)} className="p-1.5 rounded-lg hover:bg-muted">
+                        <Download className="w-4 h-4 text-success" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -968,6 +982,88 @@ const PromosTab = () => {
           </div>
         ))
       )}
+    </motion.div>
+  );
+};
+
+// ── Data Management Tab ──
+const DataTab = () => {
+  const [purging, setPurging] = useState(false);
+
+  const purgeAll = async (table: string, label: string) => {
+    if (!confirm(`⚠️ Supprimer TOUTES les données de "${label}" ? Cette action est irréversible !`)) return;
+    if (!confirm(`Êtes-vous VRAIMENT sûr ? Toutes les ${label} seront supprimées définitivement.`)) return;
+    setPurging(true);
+    const { error } = await supabase.from(table as any).delete().gte("created_at", "1970-01-01");
+    if (!error) { toast.success(`${label} supprimées`); } else { toast.error("Erreur: " + error.message); }
+    setPurging(false);
+  };
+
+  const purgeEverything = async () => {
+    if (!confirm("⚠️ ATTENTION: Supprimer TOUTES les données (commandes, reçus, points fidélité, codes promo) ?")) return;
+    if (!confirm("Dernière confirmation: cette action est IRRÉVERSIBLE. Continuer ?")) return;
+    setPurging(true);
+    await supabase.from("payment_receipts").delete().gte("created_at", "1970-01-01");
+    await supabase.from("loyalty_points").delete().gte("created_at", "1970-01-01");
+    await supabase.from("orders").delete().gte("created_at", "1970-01-01");
+    await supabase.from("promo_codes").delete().gte("created_at", "1970-01-01");
+    toast.success("Toutes les données ont été supprimées");
+    setPurging(false);
+    window.location.reload();
+  };
+
+  const tables = [
+    { table: "orders", label: "Commandes", icon: "📋", color: "text-primary" },
+    { table: "payment_receipts", label: "Reçus de paiement", icon: "🧾", color: "text-secondary" },
+    { table: "loyalty_points", label: "Points de fidélité", icon: "🎁", color: "text-warning" },
+    { table: "promo_codes", label: "Codes promo", icon: "🏷️", color: "text-success" },
+  ];
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+      <div className="glass-card rounded-2xl p-5">
+        <h3 className="font-bold text-foreground mb-1 text-sm flex items-center gap-2">
+          <Database className="w-4 h-4 text-primary" /> Gestion des données
+        </h3>
+        <p className="text-[11px] text-muted-foreground mb-4">Supprimez les données enregistrées par catégorie ou tout en une fois.</p>
+
+        <div className="space-y-2">
+          {tables.map((t) => (
+            <div key={t.table} className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
+              <span className="text-lg">{t.icon}</span>
+              <span className="flex-1 font-medium text-foreground text-sm">{t.label}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl text-xs text-destructive border-destructive/20"
+                disabled={purging}
+                onClick={() => purgeAll(t.table, t.label)}
+              >
+                <Trash2 className="w-3 h-3 mr-1" /> Supprimer tout
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass-card rounded-2xl p-5 border-2 border-destructive/20">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-6 h-6 text-destructive shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="font-bold text-destructive text-sm mb-1">Zone dangereuse</h3>
+            <p className="text-[11px] text-muted-foreground mb-3">Supprime toutes les commandes, reçus, points de fidélité et codes promo en une seule action.</p>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="rounded-xl w-full"
+              disabled={purging}
+              onClick={purgeEverything}
+            >
+              <Trash2 className="w-4 h-4" /> {purging ? "Suppression en cours..." : "Supprimer TOUTES les données"}
+            </Button>
+          </div>
+        </div>
+      </div>
     </motion.div>
   );
 };
