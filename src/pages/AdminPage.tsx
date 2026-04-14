@@ -6,7 +6,7 @@ import {
   BarChart3, ShoppingBag, TrendingUp, CheckCircle2, Clock, XCircle, Settings,
   Plus, Trash2, Save, ArrowLeft, LogOut, Bell, MessageCircle, Search, Filter,
   Users, DollarSign, Send, UserCheck, Eye, EyeOff, Key, Mail, Calendar,
-  Activity, Target, Percent, Archive, FileImage, Download, PackageCheck, Home as HomeIcon
+  Activity, Target, Percent, Archive, FileImage, Download, PackageCheck, Home as HomeIcon, AlertTriangle, Database
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
