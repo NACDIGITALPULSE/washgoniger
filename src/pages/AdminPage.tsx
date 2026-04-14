@@ -162,6 +162,7 @@ const AdminPage = () => {
             {tab === "receipts" && <ReceiptsTab key="rcpt" orders={orders} />}
             {tab === "services" && <ServicesTab key="svc" services={services} updateService={updateService} addService={addService} removeService={removeService} />}
             {tab === "promos" && <PromosTab key="promo" />}
+            {tab === "data" && <DataTab key="data" />}
           </AnimatePresence>
         </div>
       </div>
