@@ -986,4 +986,86 @@ const PromosTab = () => {
   );
 };
 
+// ── Data Management Tab ──
+const DataTab = () => {
+  const [purging, setPurging] = useState(false);
+
+  const purgeAll = async (table: string, label: string) => {
+    if (!confirm(`⚠️ Supprimer TOUTES les données de "${label}" ? Cette action est irréversible !`)) return;
+    if (!confirm(`Êtes-vous VRAIMENT sûr ? Toutes les ${label} seront supprimées définitivement.`)) return;
+    setPurging(true);
+    const { error } = await supabase.from(table).delete().neq("id", "___none___");
+    if (!error) { toast.success(`${label} supprimées`); } else { toast.error("Erreur: " + error.message); }
+    setPurging(false);
+  };
+
+  const purgeEverything = async () => {
+    if (!confirm("⚠️ ATTENTION: Supprimer TOUTES les données (commandes, reçus, points fidélité, codes promo) ?")) return;
+    if (!confirm("Dernière confirmation: cette action est IRRÉVERSIBLE. Continuer ?")) return;
+    setPurging(true);
+    await supabase.from("payment_receipts").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    await supabase.from("loyalty_points").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    await supabase.from("orders").delete().neq("id", "___none___");
+    await supabase.from("promo_codes").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    toast.success("Toutes les données ont été supprimées");
+    setPurging(false);
+    window.location.reload();
+  };
+
+  const tables = [
+    { table: "orders", label: "Commandes", icon: "📋", color: "text-primary" },
+    { table: "payment_receipts", label: "Reçus de paiement", icon: "🧾", color: "text-secondary" },
+    { table: "loyalty_points", label: "Points de fidélité", icon: "🎁", color: "text-warning" },
+    { table: "promo_codes", label: "Codes promo", icon: "🏷️", color: "text-success" },
+  ];
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+      <div className="glass-card rounded-2xl p-5">
+        <h3 className="font-bold text-foreground mb-1 text-sm flex items-center gap-2">
+          <Database className="w-4 h-4 text-primary" /> Gestion des données
+        </h3>
+        <p className="text-[11px] text-muted-foreground mb-4">Supprimez les données enregistrées par catégorie ou tout en une fois.</p>
+
+        <div className="space-y-2">
+          {tables.map((t) => (
+            <div key={t.table} className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
+              <span className="text-lg">{t.icon}</span>
+              <span className="flex-1 font-medium text-foreground text-sm">{t.label}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl text-xs text-destructive border-destructive/20"
+                disabled={purging}
+                onClick={() => purgeAll(t.table, t.label)}
+              >
+                <Trash2 className="w-3 h-3 mr-1" /> Supprimer tout
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass-card rounded-2xl p-5 border-2 border-destructive/20">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-6 h-6 text-destructive shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="font-bold text-destructive text-sm mb-1">Zone dangereuse</h3>
+            <p className="text-[11px] text-muted-foreground mb-3">Supprime toutes les commandes, reçus, points de fidélité et codes promo en une seule action.</p>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="rounded-xl w-full"
+              disabled={purging}
+              onClick={purgeEverything}
+            >
+              <Trash2 className="w-4 h-4" /> {purging ? "Suppression en cours..." : "Supprimer TOUTES les données"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 export default AdminPage;
