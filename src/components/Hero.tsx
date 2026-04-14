@@ -23,6 +23,8 @@ const Hero = () => {
   const { theme, toggleTheme } = useTheme();
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [showNotif, setShowNotif] = useState(false);
+  const [showRewards, setShowRewards] = useState(false);
+  const [redeeming, setRedeeming] = useState(false);
 
   const autoServices = services.filter((s) => s.category === "auto");
   const pressingServices = services.filter((s) => s.category === "pressing");
