@@ -1,12 +1,21 @@
-import { motion } from "framer-motion";
-import { Car, Shirt, ArrowRight, MapPin, Star, Zap, Phone, Sparkles, Shield, Clock, Award, ChevronRight, Bell, Moon, Sun, Gift } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Car, Shirt, ArrowRight, MapPin, Star, Zap, Phone, Sparkles, Shield, Clock, Award, ChevronRight, Bell, Moon, Sun, Gift, Trophy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAppState } from "@/lib/store";
 import { useTheme } from "@/hooks/use-theme";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+
+const REWARDS = [
+  { points: 50, label: "500 F de réduction", value: 500, type: "discount" as const },
+  { points: 100, label: "1 000 F de réduction", value: 1000, type: "discount" as const },
+  { points: 200, label: "Lavage Standard gratuit", value: 3000, type: "free_service" as const },
+  { points: 350, label: "Nettoyage Complet gratuit", value: 7000, type: "free_service" as const },
+  { points: 500, label: "Vidange gratuite", value: 10000, type: "free_service" as const },
+];
 
 const Hero = () => {
   const navigate = useNavigate();
