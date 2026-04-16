@@ -59,14 +59,12 @@ const Hero = () => {
 
   return (
     <section className="relative overflow-hidden bg-background min-h-screen">
-      {/* Hero */}
       <div className="relative overflow-hidden">
-        {/* Decorative blobs */}
         <div className="absolute -top-32 -right-32 w-80 h-80 rounded-full bg-primary/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full bg-secondary/15 blur-3xl" />
 
         <div className="relative container max-w-lg mx-auto px-5 pt-5 pb-8">
-          {/* Top bar */}
+          {/* Top bar - Logo enlarged, no small text */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -76,15 +74,9 @@ const Hero = () => {
               <motion.img
                 src={logo}
                 alt="WashGo Niger"
-                className="w-11 h-11 rounded-2xl object-contain shadow-lg bg-card p-1 border border-border"
+                className="w-16 h-16 rounded-2xl object-contain shadow-xl bg-card p-1.5 border-2 border-primary/20"
                 whileHover={{ rotate: [0, -5, 5, 0] }}
               />
-              <div>
-                <h1 className="text-lg font-bold text-foreground tracking-tight leading-none flex items-center gap-1.5">
-                  WashGo <span className="text-xs font-medium text-muted-foreground">Niger</span>
-                </h1>
-                <p className="text-muted-foreground text-[10px] font-medium">Lavage · Vidange · Pressing</p>
-              </div>
             </div>
             <div className="flex items-center gap-2">
               <motion.button
@@ -107,6 +99,19 @@ const Hero = () => {
                 <span className="text-xs font-semibold text-foreground">Niamey</span>
               </div>
             </div>
+          </motion.div>
+
+          {/* Brand name - large and visible */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="mb-5"
+          >
+            <h1 className="text-3xl font-extrabold text-foreground tracking-tight leading-none">
+              WashGo <span className="text-primary">Niger</span>
+            </h1>
+            <p className="text-base font-semibold text-muted-foreground mt-1">Lavage · Vidange · Pressing</p>
           </motion.div>
 
           {/* Loyalty bar */}
@@ -364,7 +369,7 @@ const ServiceSection = ({ title, emoji, services, onSeeAll, onServiceClick, dela
           <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2 mb-2">{service.description}</p>
           {service.options && (service.options as any[]).length > 0 && (
             <p className="text-xs font-bold text-primary">
-              dès {Math.min(...(service.options as any[]).map((o: any) => o.price)).toLocaleString()} F
+              {Math.min(...(service.options as any[]).map((o: any) => o.price)).toLocaleString("fr-FR")} F
             </p>
           )}
         </motion.div>
