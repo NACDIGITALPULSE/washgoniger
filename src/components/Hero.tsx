@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Car, Shirt, ArrowRight, MapPin, Star, Zap, Phone, Sparkles, Shield, Clock, Award, ChevronRight, Bell, Moon, Sun, Gift, Trophy, Check } from "lucide-react";
+import { Car, Shirt, ArrowRight, MapPin, Star, Zap, Phone, Shield, Clock, Award, ChevronRight, Bell, Moon, Sun, Gift, Trophy, Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAppState } from "@/lib/store";
@@ -22,13 +22,11 @@ const Hero = () => {
   const { services } = useAppState();
   const { theme, toggleTheme } = useTheme();
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
-  const [showNotif, setShowNotif] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
   const [redeeming, setRedeeming] = useState(false);
 
   const autoServices = services.filter((s) => s.category === "auto");
   const pressingServices = services.filter((s) => s.category === "pressing");
-
   const savedPhone = localStorage.getItem("washgo_phone");
 
   useEffect(() => {
@@ -61,103 +59,90 @@ const Hero = () => {
 
   return (
     <section className="relative overflow-hidden bg-background min-h-screen">
-      {/* Hero Header */}
-      <div className="hero-gradient relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.18),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(0,0,0,0.12),transparent_60%)]" />
+      {/* Hero */}
+      <div className="relative overflow-hidden">
+        {/* Decorative blobs */}
+        <div className="absolute -top-32 -right-32 w-80 h-80 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full bg-secondary/15 blur-3xl" />
 
-        <div className="relative container max-w-lg mx-auto px-5 pt-5 pb-14">
+        <div className="relative container max-w-lg mx-auto px-5 pt-5 pb-8">
           {/* Top bar */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-between mb-5"
+            className="flex items-center justify-between mb-6"
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
               <motion.img
                 src={logo}
                 alt="WashGo Niger"
-                className="w-10 h-10 rounded-xl object-contain shadow-lg bg-white/10 p-0.5"
+                className="w-11 h-11 rounded-2xl object-contain shadow-lg bg-card p-1 border border-border"
                 whileHover={{ rotate: [0, -5, 5, 0] }}
               />
               <div>
-                <h1 className="text-lg font-extrabold text-primary-foreground tracking-tight leading-none">
-                  WashGo <span className="text-primary-foreground/60 font-medium text-xs ml-0.5">Niger</span>
+                <h1 className="text-lg font-bold text-foreground tracking-tight leading-none flex items-center gap-1.5">
+                  WashGo <span className="text-xs font-medium text-muted-foreground">Niger</span>
                 </h1>
-                <p className="text-primary-foreground/40 text-[10px] font-medium">Lavage · Vidange · Pressing</p>
+                <p className="text-muted-foreground text-[10px] font-medium">Lavage · Vidange · Pressing</p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              {/* Dark mode toggle */}
+            <div className="flex items-center gap-2">
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={toggleTheme}
-                className="w-8 h-8 rounded-full bg-primary-foreground/15 backdrop-blur-sm flex items-center justify-center border border-primary-foreground/15"
+                className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center border border-border"
               >
-                {theme === "dark" ? <Sun className="w-3.5 h-3.5 text-primary-foreground/80" /> : <Moon className="w-3.5 h-3.5 text-primary-foreground/80" />}
+                {theme === "dark" ? <Sun className="w-4 h-4 text-primary" /> : <Moon className="w-4 h-4 text-foreground" />}
               </motion.button>
-
-              {/* Notification bell */}
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => navigate("/notifications")}
-                className="w-8 h-8 rounded-full bg-primary-foreground/15 backdrop-blur-sm flex items-center justify-center border border-primary-foreground/15 relative"
+                className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center border border-border relative"
               >
-                <Bell className="w-3.5 h-3.5 text-primary-foreground/80" />
-                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
+                <Bell className="w-4 h-4 text-foreground" />
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary animate-pulse border-2 border-background" />
               </motion.button>
-
-              {/* Location badge */}
-              <div className="flex items-center gap-1 rounded-full bg-primary-foreground/15 backdrop-blur-sm px-2.5 py-1.5 border border-primary-foreground/15">
-                <MapPin className="w-3 h-3 text-primary-foreground/70" />
-                <span className="text-[11px] font-semibold text-primary-foreground/80">Niamey</span>
+              <div className="flex items-center gap-1.5 rounded-xl bg-muted px-3 py-2 border border-border">
+                <MapPin className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-semibold text-foreground">Niamey</span>
               </div>
             </div>
           </motion.div>
 
-          {/* Loyalty points bar */}
+          {/* Loyalty bar */}
           {savedPhone && loyaltyPoints > 0 && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mb-4"
-            >
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-5">
               <button
                 onClick={() => setShowRewards(!showRewards)}
-                className="w-full flex items-center gap-2 bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-primary-foreground/10"
+                className="w-full flex items-center gap-2.5 bg-accent rounded-2xl px-4 py-3 border border-border"
               >
-                <Gift className="w-4 h-4 text-yellow-300" />
-                <span className="text-xs font-semibold text-primary-foreground/80">
-                  {loyaltyPoints} points fidélité
-                </span>
-                <span className="text-[10px] text-primary-foreground/50 ml-auto flex items-center gap-1">
-                  <Trophy className="w-3 h-3" /> Échanger
+                <div className="w-8 h-8 rounded-xl hero-gradient flex items-center justify-center">
+                  <Gift className="w-4 h-4 text-primary-foreground" />
+                </div>
+                <span className="text-sm font-bold text-foreground">{loyaltyPoints} pts</span>
+                <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
+                  <Trophy className="w-3.5 h-3.5" /> Échanger
                 </span>
               </button>
               <AnimatePresence>
                 {showRewards && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="mt-2 space-y-1.5">
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                    <div className="mt-2 space-y-2">
                       {REWARDS.map((r) => {
                         const canRedeem = loyaltyPoints >= r.points;
                         return (
-                          <div key={r.points} className={`flex items-center gap-2 rounded-lg px-3 py-2 ${canRedeem ? "bg-primary-foreground/10" : "bg-primary-foreground/5 opacity-50"}`}>
-                            <span className="text-xs">{r.type === "free_service" ? "🎁" : "💰"}</span>
+                          <div key={r.points} className={`flex items-center gap-3 rounded-xl px-4 py-3 border ${canRedeem ? "bg-card border-border" : "bg-muted border-transparent opacity-50"}`}>
+                            <span className="text-sm">{r.type === "free_service" ? "🎁" : "💰"}</span>
                             <div className="flex-1">
-                              <div className="text-[11px] font-semibold text-primary-foreground/90">{r.label}</div>
-                              <div className="text-[9px] text-primary-foreground/50">{r.points} points</div>
+                              <div className="text-xs font-bold text-foreground">{r.label}</div>
+                              <div className="text-[10px] text-muted-foreground">{r.points} points</div>
                             </div>
                             <button
                               disabled={!canRedeem || redeeming}
                               onClick={() => redeemReward(r)}
-                              className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${canRedeem ? "bg-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/30" : "bg-primary-foreground/5 text-primary-foreground/30"}`}
+                              className={`text-xs font-bold px-3 py-1.5 rounded-lg ${canRedeem ? "hero-gradient text-primary-foreground" : "bg-muted text-muted-foreground"}`}
                             >
-                              {canRedeem ? <Check className="w-3 h-3 inline" /> : "🔒"}
+                              {canRedeem ? <Check className="w-3.5 h-3.5 inline" /> : "🔒"}
                             </button>
                           </div>
                         );
@@ -169,102 +154,100 @@ const Hero = () => {
             </motion.div>
           )}
 
-          {/* Hero text */}
+          {/* Hero card */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="text-center mb-5"
+            transition={{ delay: 0.1 }}
+            className="hero-gradient rounded-3xl p-6 mb-6 relative overflow-hidden"
           >
-            <h2 className="text-primary-foreground font-extrabold text-[22px] leading-tight mb-2">
-              Votre véhicule mérite le meilleur soin ✨
-            </h2>
-            <p className="text-primary-foreground/60 text-sm leading-relaxed max-w-[280px] mx-auto">
-              Lavage auto & pressing à domicile.<br />Rapide, fiable, abordable.
-            </p>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
+            <div className="relative text-center">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring" }}
+                className="w-14 h-14 rounded-2xl bg-primary-foreground/20 backdrop-blur flex items-center justify-center mx-auto mb-3"
+              >
+                <Sparkles className="w-7 h-7 text-primary-foreground" />
+              </motion.div>
+              <h2 className="text-primary-foreground font-bold text-xl leading-tight mb-2">
+                Votre véhicule mérite<br />le meilleur soin
+              </h2>
+              <p className="text-primary-foreground/70 text-sm mb-5">
+                Lavage auto & pressing à domicile
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  size="lg"
+                  className="rounded-2xl h-12 px-6 text-sm font-bold bg-primary-foreground text-foreground hover:bg-primary-foreground/90 shadow-lg flex-1 max-w-[150px] group"
+                  onClick={() => navigate("/services/auto")}
+                >
+                  <Car className="w-4 h-4" />
+                  Auto
+                  <ArrowRight className="w-3.5 h-3.5 ml-auto group-hover:translate-x-1 transition-transform" />
+                </Button>
+                <Button
+                  size="lg"
+                  className="rounded-2xl h-12 px-6 text-sm font-bold border-2 border-primary-foreground/30 text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20 shadow-lg flex-1 max-w-[150px] group"
+                  onClick={() => navigate("/services/pressing")}
+                >
+                  <Shirt className="w-4 h-4" />
+                  Pressing
+                  <ArrowRight className="w-3.5 h-3.5 ml-auto group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </div>
+            </div>
           </motion.div>
 
-          {/* CTA buttons */}
+          {/* Stats row */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
-            className="flex gap-3 justify-center max-w-[320px] mx-auto"
+            className="grid grid-cols-3 gap-3 mb-6"
           >
-            <Button
-              variant="secondary"
-              size="lg"
-              className="rounded-2xl h-12 px-5 text-sm font-bold shadow-lg flex-1 group"
-              onClick={() => navigate("/services/auto")}
-            >
-              <Car className="w-4.5 h-4.5" />
-              Auto
-              <ArrowRight className="w-3.5 h-3.5 ml-auto group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <Button
-              size="lg"
-              className="rounded-2xl h-12 px-5 text-sm font-bold border-2 border-primary-foreground/20 text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20 shadow-lg flex-1 group"
-              onClick={() => navigate("/services/pressing")}
-            >
-              <Shirt className="w-4.5 h-4.5" />
-              Pressing
-              <ArrowRight className="w-3.5 h-3.5 ml-auto group-hover:translate-x-1 transition-transform" />
-            </Button>
+            {[
+              { icon: Star, value: "4.8", label: "Avis", color: "text-warning" },
+              { icon: Zap, value: "30min", label: "Délai", color: "text-primary" },
+              { icon: Phone, value: "500+", label: "Clients", color: "text-secondary" },
+            ].map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 + i * 0.08 }}
+                className="glass-card rounded-2xl p-3 text-center"
+              >
+                <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center mx-auto mb-1.5">
+                  <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                </div>
+                <div className="text-base font-bold text-foreground leading-none">{stat.value}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">{stat.label}</div>
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </div>
 
-      {/* Floating stats bar */}
-      <div className="container max-w-lg mx-auto px-4 -mt-7 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className="glass-card rounded-2xl p-3.5 flex items-center justify-around shadow-lg"
-        >
-          {[
-            { icon: Star, value: "4.8", label: "Avis", color: "text-yellow-500" },
-            { icon: Zap, value: "30min", label: "Délai", color: "text-primary" },
-            { icon: Phone, value: "500+", label: "Clients", color: "text-secondary" },
-          ].map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              className="flex items-center gap-2"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.4 + i * 0.1 }}
-            >
-              {i > 0 && <div className="w-px h-7 bg-border -ml-1 mr-1" />}
-              <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center">
-                <stat.icon className={`w-3.5 h-3.5 ${stat.color}`} />
-              </div>
-              <div>
-                <div className="text-sm font-extrabold text-foreground leading-none">{stat.value}</div>
-                <div className="text-[9px] text-muted-foreground">{stat.label}</div>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
-
       {/* Trust badges */}
-      <div className="container max-w-lg mx-auto px-4 mt-4">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="flex gap-2 justify-center flex-wrap">
+      <div className="container max-w-lg mx-auto px-5 -mt-2 mb-5">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="flex gap-2 justify-center flex-wrap">
           {[
-            { icon: Shield, text: "Paiement sécurisé", bg: "bg-primary/8 text-primary" },
-            { icon: Clock, text: "Service rapide", bg: "bg-secondary/8 text-secondary" },
-            { icon: Award, text: "Qualité garantie", bg: "bg-warning/10 text-warning" },
+            { icon: Shield, text: "Paiement sécurisé" },
+            { icon: Clock, text: "Service rapide" },
+            { icon: Award, text: "Qualité garantie" },
           ].map((badge) => (
-            <div key={badge.text} className={`flex items-center gap-1.5 ${badge.bg} rounded-full px-3 py-1.5`}>
-              <badge.icon className="w-3 h-3" />
-              <span className="text-[10px] font-semibold">{badge.text}</span>
+            <div key={badge.text} className="flex items-center gap-1.5 bg-muted rounded-full px-3 py-1.5 border border-border">
+              <badge.icon className="w-3 h-3 text-primary" />
+              <span className="text-[10px] font-semibold text-foreground">{badge.text}</span>
             </div>
           ))}
         </motion.div>
       </div>
 
       {/* Services */}
-      <div className="container max-w-lg mx-auto px-4 mt-6 space-y-5 pb-6">
+      <div className="container max-w-lg mx-auto px-5 space-y-6 pb-6">
         <ServiceSection
           title="Services Auto"
           emoji="🚗"
@@ -273,7 +256,6 @@ const Hero = () => {
           onServiceClick={(id) => navigate(`/order/${id}`)}
           delay={0.45}
         />
-
         <ServiceSection
           title="Pressing"
           emoji="👕"
@@ -288,32 +270,28 @@ const Hero = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.7 }}
-          className="hero-gradient rounded-2xl p-5 relative overflow-hidden"
+          className="rounded-3xl p-5 relative overflow-hidden bg-secondary"
         >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_60%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.1),transparent_60%)]" />
           <div className="relative flex items-center gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-1.5 mb-1">
-                <Trophy className="w-4 h-4 text-primary-foreground/80" />
-                <span className="text-[10px] font-bold text-primary-foreground/70 uppercase tracking-wider">Récompenses fidélité</span>
+                <Trophy className="w-4 h-4 text-secondary-foreground/80" />
+                <span className="text-[10px] font-bold text-secondary-foreground/70 uppercase tracking-wider">Fidélité</span>
               </div>
-              <p className="text-primary-foreground font-bold text-base leading-snug">
+              <p className="text-secondary-foreground font-bold text-base leading-snug">
                 Échangez vos points contre des cadeaux !
               </p>
-              <p className="text-primary-foreground/50 text-xs mt-1">50 pts = 500 F • 200 pts = Service gratuit</p>
+              <p className="text-secondary-foreground/60 text-xs mt-1">50 pts = 500 F • 200 pts = Service gratuit</p>
             </div>
             <div className="text-4xl">🏆</div>
           </div>
         </motion.div>
 
         {/* How it works */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
           <h2 className="font-bold text-foreground text-base mb-3 flex items-center gap-2">
-            <span className="w-7 h-7 rounded-lg hero-gradient flex items-center justify-center text-xs">📋</span>
+            <span className="w-8 h-8 rounded-xl hero-gradient flex items-center justify-center text-sm">📋</span>
             Comment ça marche ?
           </h2>
           <div className="space-y-2.5">
@@ -328,14 +306,14 @@ const Hero = () => {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.85 + i * 0.1 }}
-                className="glass-card rounded-xl p-3.5 flex items-center gap-3"
+                className="glass-card rounded-2xl p-4 flex items-center gap-3"
               >
-                <div className="w-10 h-10 rounded-xl hero-gradient flex items-center justify-center text-lg font-extrabold text-primary-foreground shrink-0">
+                <div className="w-11 h-11 rounded-xl hero-gradient flex items-center justify-center text-lg shrink-0">
                   {item.emoji}
                 </div>
                 <div className="flex-1">
                   <div className="font-bold text-foreground text-sm">{item.title}</div>
-                  <div className="text-[11px] text-muted-foreground">{item.desc}</div>
+                  <div className="text-xs text-muted-foreground">{item.desc}</div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
               </motion.div>
@@ -361,7 +339,7 @@ const ServiceSection = ({ title, emoji, services, onSeeAll, onServiceClick, dela
   <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
     <div className="flex items-center justify-between mb-3">
       <h2 className="font-bold text-foreground text-base flex items-center gap-2">
-        <span className="w-7 h-7 rounded-lg hero-gradient flex items-center justify-center text-xs">{emoji}</span>
+        <span className="w-8 h-8 rounded-xl hero-gradient flex items-center justify-center text-sm">{emoji}</span>
         {title}
       </h2>
       <button onClick={onSeeAll} className="text-xs font-semibold text-primary flex items-center gap-1 group">
@@ -379,16 +357,16 @@ const ServiceSection = ({ title, emoji, services, onSeeAll, onServiceClick, dela
           className="glass-card rounded-2xl p-4 cursor-pointer hover:scale-[1.02] active:scale-[0.97] transition-all duration-200 group"
           onClick={() => onServiceClick(service.id)}
         >
-          <div className="w-11 h-11 rounded-xl hero-gradient flex items-center justify-center text-lg mb-2.5 shadow-sm group-hover:shadow-md transition-shadow">
+          <div className="w-11 h-11 rounded-xl bg-accent flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition-transform">
             {service.icon}
           </div>
-          <div className="font-semibold text-foreground text-sm leading-tight">{service.name}</div>
-          <div className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{service.description}</div>
-          <div className="text-xs text-primary font-bold mt-2 flex items-center gap-1">
-            dès {service.options[0]?.price.toLocaleString("fr-FR") || "—"} F
-            {service.options[0]?.unit === "kg" ? "/kg" : ""}
-            <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
+          <h3 className="font-bold text-foreground text-sm mb-1 leading-tight">{service.name}</h3>
+          <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2 mb-2">{service.description}</p>
+          {service.options && (service.options as any[]).length > 0 && (
+            <p className="text-xs font-bold text-primary">
+              dès {Math.min(...(service.options as any[]).map((o: any) => o.price)).toLocaleString()} F
+            </p>
+          )}
         </motion.div>
       ))}
     </div>
