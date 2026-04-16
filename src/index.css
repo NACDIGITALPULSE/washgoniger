@@ -2,52 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 40 30% 97%;
-    --foreground: 240 20% 10%;
+    --background: 180 15% 97%;
+    --foreground: 200 40% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 20% 10%;
+    --card-foreground: 200 40% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 20% 10%;
+    --popover-foreground: 200 40% 8%;
 
-    --primary: 25 95% 53%;
+    --primary: 170 75% 38%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 55% 55%;
+    --secondary: 280 60% 58%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 40 20% 92%;
-    --muted-foreground: 240 10% 45%;
+    --muted: 180 10% 92%;
+    --muted-foreground: 200 15% 42%;
 
-    --accent: 25 80% 94%;
-    --accent-foreground: 25 90% 35%;
+    --accent: 170 50% 92%;
+    --accent-foreground: 170 70% 25%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 40 15% 88%;
-    --input: 40 15% 88%;
-    --ring: 25 95% 53%;
+    --border: 180 10% 88%;
+    --input: 180 10% 88%;
+    --ring: 170 75% 38%;
 
     --radius: 1rem;
 
-    --sidebar-background: 240 20% 10%;
-    --sidebar-foreground: 40 20% 92%;
-    --sidebar-primary: 25 95% 55%;
+    --sidebar-background: 200 40% 8%;
+    --sidebar-foreground: 180 10% 92%;
+    --sidebar-primary: 170 75% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 20% 16%;
-    --sidebar-accent-foreground: 40 20% 92%;
-    --sidebar-border: 240 15% 18%;
-    --sidebar-ring: 25 95% 55%;
+    --sidebar-accent: 200 35% 14%;
+    --sidebar-accent-foreground: 180 10% 92%;
+    --sidebar-border: 200 30% 16%;
+    --sidebar-ring: 170 75% 45%;
 
-    --hero-gradient: linear-gradient(145deg, hsl(25 95% 53%), hsl(340 80% 55%));
-    --card-shadow: 0 4px 24px -4px hsl(25 95% 53% / 0.06);
-    --card-shadow-hover: 0 12px 32px -4px hsl(25 95% 53% / 0.14);
+    --hero-gradient: linear-gradient(145deg, hsl(170 75% 38%), hsl(280 60% 58%));
+    --card-shadow: 0 4px 20px -4px hsl(170 75% 38% / 0.07);
+    --card-shadow-hover: 0 12px 32px -4px hsl(170 75% 38% / 0.14);
     --success: 155 60% 42%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
@@ -55,35 +55,35 @@
   }
 
   .dark {
-    --background: 240 18% 6%;
-    --foreground: 40 15% 92%;
+    --background: 200 35% 5%;
+    --foreground: 180 10% 92%;
 
-    --card: 240 18% 10%;
-    --card-foreground: 40 15% 92%;
+    --card: 200 30% 9%;
+    --card-foreground: 180 10% 92%;
 
-    --popover: 240 18% 10%;
-    --popover-foreground: 40 15% 92%;
+    --popover: 200 30% 9%;
+    --popover-foreground: 180 10% 92%;
 
-    --primary: 25 95% 58%;
+    --primary: 170 70% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 260 55% 60%;
+    --secondary: 280 55% 62%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 240 15% 15%;
-    --muted-foreground: 40 10% 55%;
+    --muted: 200 25% 14%;
+    --muted-foreground: 180 10% 52%;
 
-    --accent: 25 50% 16%;
-    --accent-foreground: 25 90% 75%;
+    --accent: 170 40% 14%;
+    --accent-foreground: 170 65% 72%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 15% 16%;
-    --input: 240 15% 16%;
-    --ring: 25 95% 58%;
+    --border: 200 25% 14%;
+    --input: 200 25% 14%;
+    --ring: 170 70% 45%;
 
-    --hero-gradient: linear-gradient(145deg, hsl(25 90% 45%), hsl(340 75% 45%));
+    --hero-gradient: linear-gradient(145deg, hsl(170 70% 32%), hsl(280 50% 45%));
     --card-shadow: 0 4px 24px -4px hsl(0 0% 0% / 0.4);
     --card-shadow-hover: 0 12px 32px -4px hsl(0 0% 0% / 0.5);
     --success: 155 60% 40%;
@@ -100,11 +100,11 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Outfit', sans-serif;
   }
 }
 
