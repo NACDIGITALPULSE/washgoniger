@@ -7,7 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation, Tag, Loader2 } from "lucide-react";
+import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation, Tag, Loader2, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -145,7 +145,6 @@ const OrderPage = () => {
     const optionsArray = Array.from(selectedOptions.values());
     const firstOpt = optionsArray[0];
 
-    // Generate order number: WG-YYYYMMDD-XXXX
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
     const seq = Math.floor(1000 + Math.random() * 9000);
@@ -172,33 +171,31 @@ const OrderPage = () => {
 
     await addOrder(order);
 
-    // Increment promo code usage
     if (appliedPromo) {
       await supabase.from("promo_codes").update({ used_count: appliedPromo.used_count + 1 }).eq("id", appliedPromo.id);
     }
 
     localStorage.setItem("washgo_phone", phone);
 
-    // Auto-send WhatsApp notification to admin
+    // WhatsApp notification to admin
     const optionsText = optionsArray.map(o => `${o.option.name} ×${o.quantity}`).join(", ");
     const locationText = location === "domicile" ? `🏠 Domicile${address ? ` — ${address}` : ""}` : "🏪 Sur place";
     const payLabel = paymentMethods.find(p => p.id === payment)?.label || payment;
     const adminMsg = `🧾 *Nouvelle commande WashGo Niger*\n\n📋 N° ${orderNumber}\n👤 ${name}\n📞 ${phone}\n\n🔧 ${service.icon} ${service.name}\n${optionsText}\n💰 *${total.toLocaleString("fr-FR")} FCFA*\n📍 ${locationText}\n💳 ${payLabel}`;
     window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(adminMsg)}`, "_blank");
 
-    // If domicile, also share location automatically
+    // If domicile, also share location
     if (location === "domicile" && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
           const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
           const locMsg = `📍 *Position pour commande ${orderNumber}*\n${mapUrl}\n\nNom: ${name}\nTél: ${phone}`;
-          // Small delay to avoid popup blocker
           setTimeout(() => {
             window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(locMsg)}`, "_blank");
           }, 1500);
         },
-        () => {} // silent fail
+        () => {}
       );
     }
 
@@ -207,20 +204,40 @@ const OrderPage = () => {
   };
 
   const paymentMethods = [
-    { id: "cash" as const, label: "Cash", emoji: "💵" },
-    { id: "nita" as const, label: "Nita", emoji: "💳" },
-    { id: "amanata" as const, label: "Amanata", emoji: "💳" },
+    { id: "cash" as const, label: "Cash", emoji: "💵", desc: "Paiement en espèces" },
+    { id: "nita" as const, label: "Nita", emoji: "📱", desc: "Mobile Money" },
+    { id: "amanata" as const, label: "Amanata", emoji: "📱", desc: "Mobile Money" },
   ];
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      <PageHeader title={`${service.icon} ${service.name}`} subtitle={service.description} />
-      <div className="container max-w-lg mx-auto px-4 py-6 space-y-6">
-        {/* Options - Multi select */}
-        <section>
-          <h3 className="font-bold text-foreground mb-1 text-sm uppercase tracking-wide">Choisir vos options</h3>
-          <p className="text-xs text-muted-foreground mb-3">Vous pouvez sélectionner plusieurs options</p>
-          <div className="space-y-2">
+      {/* Custom header */}
+      <div className="hero-gradient px-5 pt-6 pb-8 relative">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_60%)]" />
+        <div className="relative container max-w-lg mx-auto">
+          <button onClick={() => navigate(-1)} className="text-primary-foreground/70 hover:text-primary-foreground mb-3 flex items-center gap-1 text-sm font-medium">
+            ← Retour
+          </button>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-primary-foreground/20 backdrop-blur flex items-center justify-center text-3xl">
+              {service.icon}
+            </div>
+            <div>
+              <h1 className="text-xl font-extrabold text-primary-foreground leading-tight">{service.name}</h1>
+              <p className="text-sm text-primary-foreground/60">{service.description}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container max-w-lg mx-auto px-5 -mt-4 relative z-10 space-y-5">
+        {/* Options */}
+        <section className="glass-card rounded-2xl p-5">
+          <h3 className="font-bold text-foreground mb-1 text-sm flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-primary" /> Choisir vos options
+          </h3>
+          <p className="text-[11px] text-muted-foreground mb-4">Sélectionnez une ou plusieurs options</p>
+          <div className="space-y-2.5">
             {service.options.map((opt) => {
               const selected = selectedOptions.has(opt.id);
               const item = selectedOptions.get(opt.id);
@@ -229,16 +246,18 @@ const OrderPage = () => {
                   <motion.button
                     whileTap={{ scale: 0.97 }}
                     onClick={() => toggleOption(opt)}
-                    className={`w-full rounded-2xl p-4 text-left transition-all border-2 ${
-                      selected ? "border-primary bg-primary/5 shadow-md" : "border-transparent glass-card"
+                    className={`w-full rounded-xl p-4 text-left transition-all border-2 ${
+                      selected ? "border-primary bg-primary/5 shadow-md" : "border-border bg-muted/30 hover:bg-muted/50"
                     }`}
                   >
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-3">
                         {selected ? (
-                          <CheckCircle2 className="w-5 h-5 text-secondary flex-shrink-0" />
+                          <div className="w-6 h-6 rounded-full hero-gradient flex items-center justify-center">
+                            <CheckCircle2 className="w-4 h-4 text-primary-foreground" />
+                          </div>
                         ) : (
-                          <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/30 flex-shrink-0" />
+                          <div className="w-6 h-6 rounded-full border-2 border-muted-foreground/30 flex-shrink-0" />
                         )}
                         <div>
                           <div className="font-semibold text-foreground flex items-center gap-1.5">
@@ -246,46 +265,45 @@ const OrderPage = () => {
                             {opt.unit === "kg" && <Scale className="w-3.5 h-3.5 text-secondary" />}
                           </div>
                           {opt.description && (
-                            <div className="text-xs text-muted-foreground mt-0.5">{opt.description}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">{opt.description}</div>
                           )}
                         </div>
                       </div>
-                      <span className="font-bold text-primary text-sm">
-                        {opt.price.toLocaleString("fr-FR")} FCFA
-                        {opt.unit === "kg" && <span className="text-muted-foreground font-normal">/kg</span>}
+                      <span className="font-bold text-primary text-sm whitespace-nowrap">
+                        {opt.price.toLocaleString("fr-FR")} F
+                        {opt.unit === "kg" && <span className="text-muted-foreground font-normal text-xs">/kg</span>}
                       </span>
                     </div>
                   </motion.button>
 
-                  {/* Quantity for selected option */}
                   <AnimatePresence>
                     {selected && item && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="mt-1 mb-2"
+                        className="mt-1.5 mb-1"
                       >
-                        <div className="glass-card rounded-xl p-3 flex items-center justify-between ml-8">
+                        <div className="rounded-xl p-3 flex items-center justify-between ml-9 bg-muted/40 border border-border">
                           <button
                             onClick={(e) => { e.stopPropagation(); updateQty(opt.id, -1); }}
-                            className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                            className="w-9 h-9 rounded-lg bg-background flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-colors border border-border"
                           >
-                            <Minus className="w-3.5 h-3.5" />
+                            <Minus className="w-4 h-4" />
                           </button>
                           <div className="text-center">
-                            <div className="text-xl font-extrabold text-foreground">{item.quantity}</div>
+                            <div className="text-2xl font-extrabold text-foreground">{item.quantity}</div>
                             <div className="text-[10px] text-muted-foreground">
                               {opt.unit === "kg" ? "kg" : `pièce${item.quantity > 1 ? "s" : ""}`}
                             </div>
                           </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); updateQty(opt.id, 1); }}
-                            className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                            className="w-9 h-9 rounded-lg bg-background flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-colors border border-border"
                           >
-                            <Plus className="w-3.5 h-3.5" />
+                            <Plus className="w-4 h-4" />
                           </button>
-                          <div className="text-right ml-3">
+                          <div className="text-right ml-4">
                             <div className="text-sm font-bold text-primary">
                               {(opt.price * item.quantity).toLocaleString("fr-FR")} F
                             </div>
@@ -301,86 +319,103 @@ const OrderPage = () => {
         </section>
 
         {/* Location */}
-        <section>
-          <h3 className="font-bold text-foreground mb-3 text-sm uppercase tracking-wide">📍 Lieu</h3>
+        <section className="glass-card rounded-2xl p-5">
+          <h3 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-primary" /> Lieu d'intervention
+          </h3>
           <div className="grid grid-cols-2 gap-3">
             {(["sur_place", "domicile"] as const).map((loc) => (
               <button
                 key={loc}
                 onClick={() => setLocation(loc)}
                 className={`rounded-2xl p-4 text-center transition-all border-2 ${
-                  location === loc ? "border-primary bg-primary/5 shadow-md" : "border-transparent glass-card"
+                  location === loc ? "border-primary bg-primary/5 shadow-md" : "border-border bg-muted/30 hover:bg-muted/50"
                 }`}
               >
-                <div className="text-2xl mb-2">{loc === "sur_place" ? "🏪" : "🏠"}</div>
-                <div className="text-sm font-semibold text-foreground">
+                <div className="text-3xl mb-2">{loc === "sur_place" ? "🏪" : "🏠"}</div>
+                <div className="text-sm font-bold text-foreground">
                   {loc === "sur_place" ? "Sur place" : "À domicile"}
+                </div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">
+                  {loc === "sur_place" ? "Venez chez nous" : "On vient chez vous"}
                 </div>
               </button>
             ))}
           </div>
+
+          {/* Location sharing - available for both sur_place and domicile */}
           <AnimatePresence>
             {location === "domicile" && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-3 space-y-2">
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-3">
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                   <Input placeholder="Votre adresse à Niamey" value={address} onChange={(e) => setAddress(e.target.value)} className="pl-10 rounded-xl" />
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full rounded-xl text-xs"
-                  onClick={shareLocation}
-                  disabled={gettingLocation}
-                >
-                  <Navigation className="w-3.5 h-3.5 mr-1.5" />
-                  {gettingLocation ? "Récupération..." : "📍 Partager ma position par WhatsApp"}
-                </Button>
               </motion.div>
             )}
           </AnimatePresence>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full rounded-xl text-xs mt-3 gap-2"
+            onClick={shareLocation}
+            disabled={gettingLocation}
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            {gettingLocation ? "Récupération..." : "📍 Partager ma position par WhatsApp"}
+          </Button>
         </section>
 
         {/* Payment */}
-        <section>
-          <h3 className="font-bold text-foreground mb-3 text-sm uppercase tracking-wide">💳 Paiement</h3>
-          <p className="text-xs text-muted-foreground mb-2">Nita & Amanata via le <span className="font-semibold">+227 88 08 29 87</span></p>
-          <div className="grid grid-cols-3 gap-2">
+        <section className="glass-card rounded-2xl p-5">
+          <h3 className="font-bold text-foreground mb-2 text-sm flex items-center gap-2">
+            💳 Mode de paiement
+          </h3>
+          <p className="text-[11px] text-muted-foreground mb-3">
+            Nita & Amanata via le <span className="font-bold text-primary">+227 88 08 29 87</span>
+          </p>
+          <div className="grid grid-cols-3 gap-2.5">
             {paymentMethods.map((p) => (
               <button
                 key={p.id}
                 onClick={() => setPayment(p.id)}
-                className={`rounded-2xl p-3 text-center transition-all border-2 ${
-                  payment === p.id ? "border-primary bg-primary/5 shadow-md" : "border-transparent glass-card"
+                className={`rounded-2xl p-4 text-center transition-all border-2 ${
+                  payment === p.id ? "border-primary bg-primary/5 shadow-md" : "border-border bg-muted/30 hover:bg-muted/50"
                 }`}
               >
-                <div className="text-lg mb-0.5">{p.emoji}</div>
-                <div className="text-[10px] font-semibold text-foreground">{p.label}</div>
+                <div className="text-2xl mb-1">{p.emoji}</div>
+                <div className="text-xs font-bold text-foreground">{p.label}</div>
+                <div className="text-[9px] text-muted-foreground mt-0.5">{p.desc}</div>
               </button>
             ))}
           </div>
         </section>
 
         {/* Client info */}
-        <section>
-          <h3 className="font-bold text-foreground mb-3 text-sm uppercase tracking-wide">👤 Vos informations</h3>
+        <section className="glass-card rounded-2xl p-5">
+          <h3 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
+            <User className="w-4 h-4 text-primary" /> Vos informations
+          </h3>
           <div className="space-y-3">
             <div className="relative">
               <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Votre nom complet" value={name} onChange={(e) => setName(e.target.value)} className="pl-10 rounded-xl" />
+              <Input placeholder="Votre nom complet" value={name} onChange={(e) => setName(e.target.value)} className="pl-10 rounded-xl h-12" />
             </div>
             <div className="relative">
               <Phone className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Numéro de téléphone" value={phone} onChange={(e) => setPhone(e.target.value)} className="pl-10 rounded-xl" />
+              <Input placeholder="Numéro de téléphone" value={phone} onChange={(e) => setPhone(e.target.value)} className="pl-10 rounded-xl h-12" />
             </div>
           </div>
         </section>
 
         {/* Promo Code */}
-        <section>
-          <h3 className="font-bold text-foreground mb-3 text-sm uppercase tracking-wide">🏷️ Code promo</h3>
+        <section className="glass-card rounded-2xl p-5">
+          <h3 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
+            <Tag className="w-4 h-4 text-primary" /> Code promo
+          </h3>
           {appliedPromo ? (
-            <div className="glass-card rounded-xl p-3 flex items-center justify-between">
+            <div className="rounded-xl p-3 flex items-center justify-between bg-success/10 border border-success/20">
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4 text-success" />
                 <span className="font-bold text-success text-sm">{appliedPromo.code}</span>
@@ -398,11 +433,11 @@ const OrderPage = () => {
                   placeholder="Entrer un code promo"
                   value={promoInput}
                   onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                  className="pl-10 rounded-xl uppercase"
+                  className="pl-10 rounded-xl uppercase h-12"
                   onKeyDown={(e) => e.key === "Enter" && applyPromoCode()}
                 />
               </div>
-              <Button variant="outline" className="rounded-xl" onClick={applyPromoCode} disabled={promoLoading}>
+              <Button variant="outline" className="rounded-xl h-12 px-5 font-bold" onClick={applyPromoCode} disabled={promoLoading}>
                 {promoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Appliquer"}
               </Button>
             </div>
@@ -437,7 +472,7 @@ const OrderPage = () => {
                   <span className="text-gradient">{total.toLocaleString("fr-FR")} FCFA</span>
                 </div>
               </div>
-              <Button variant="hero" size="lg" className="w-full rounded-2xl h-14 text-base" onClick={handleSubmit}>
+              <Button variant="hero" size="lg" className="w-full rounded-2xl h-14 text-base font-bold" onClick={handleSubmit}>
                 Commander maintenant 🚀
               </Button>
             </motion.div>

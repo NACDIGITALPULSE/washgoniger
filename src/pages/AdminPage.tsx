@@ -6,7 +6,8 @@ import {
   BarChart3, ShoppingBag, TrendingUp, CheckCircle2, Clock, XCircle, Settings,
   Plus, Trash2, Save, ArrowLeft, LogOut, Bell, MessageCircle, Search, Filter,
   Users, DollarSign, Send, UserCheck, Eye, EyeOff, Key, Mail, Calendar,
-  Activity, Target, Percent, Archive, FileImage, Download, PackageCheck, Home as HomeIcon, AlertTriangle, Database
+  Activity, Target, Percent, Archive, FileImage, Download, PackageCheck, Home as HomeIcon, AlertTriangle, Database,
+  Calculator, FileText, FileSpreadsheet, File
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -40,7 +41,7 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 const ADMIN_WHATSAPP = "22788082987";
 const CHART_COLORS = ["hsl(215, 80%, 48%)", "hsl(155, 60%, 42%)", "hsl(38, 92%, 50%)", "hsl(0, 84%, 60%)", "hsl(270, 60%, 50%)", "hsl(190, 70%, 45%)"];
 
-type TabKey = "dashboard" | "orders" | "users" | "notifications" | "receipts" | "services" | "promos" | "data";
+type TabKey = "dashboard" | "orders" | "users" | "notifications" | "receipts" | "accounting" | "services" | "promos" | "data";
 
 const AdminPage = () => {
   const { orders, updateOrderStatus, services, updateService, addService, removeService } = useAppState();
@@ -90,6 +91,7 @@ const AdminPage = () => {
     { key: "users", label: "Users", icon: "👥" },
     { key: "notifications", label: "Notifs", icon: "🔔" },
     { key: "receipts", label: "Reçus", icon: "🧾" },
+    { key: "accounting", label: "Compta", icon: "📈" },
     { key: "services", label: "Svcs", icon: "⚙️" },
     { key: "promos", label: "Promos", icon: "🏷️" },
     { key: "data", label: "Data", icon: "🗑️" },
@@ -160,6 +162,7 @@ const AdminPage = () => {
             {tab === "users" && <UsersTab key="usr" />}
             {tab === "notifications" && <NotificationsTab key="notif" orders={orders} />}
             {tab === "receipts" && <ReceiptsTab key="rcpt" orders={orders} />}
+            {tab === "accounting" && <AccountingTab key="acct" orders={orders} />}
             {tab === "services" && <ServicesTab key="svc" services={services} updateService={updateService} addService={addService} removeService={removeService} />}
             {tab === "promos" && <PromosTab key="promo" />}
             {tab === "data" && <DataTab key="data" />}
@@ -982,6 +985,306 @@ const PromosTab = () => {
           </div>
         ))
       )}
+    </motion.div>
+  );
+};
+
+// ── Accounting Tab ──
+const AccountingTab = ({ orders }: { orders: Order[] }) => {
+  const [period, setPeriod] = useState<"daily" | "monthly" | "global">("daily");
+  const [exporting, setExporting] = useState(false);
+
+  const today = new Date();
+
+  // Daily revenue data
+  const dailyData = useMemo(() => {
+    const map: Record<string, Record<string, number>> = {};
+    const totalMap: Record<string, number> = {};
+    orders.filter(o => o.status === "completed").forEach((o) => {
+      const d = new Date(o.createdAt).toLocaleDateString("fr-FR");
+      if (!map[d]) map[d] = {};
+      const svc = o.service.name;
+      map[d][svc] = (map[d][svc] || 0) + o.total;
+      totalMap[d] = (totalMap[d] || 0) + o.total;
+    });
+    return Object.entries(totalMap)
+      .map(([date, total]) => ({ date, total, details: map[date] }))
+      .sort((a, b) => {
+        const [da, ma, ya] = a.date.split("/").map(Number);
+        const [db, mb, yb] = b.date.split("/").map(Number);
+        return new Date(yb, mb - 1, db).getTime() - new Date(ya, ma - 1, da).getTime();
+      });
+  }, [orders]);
+
+  // Monthly revenue data
+  const monthlyData = useMemo(() => {
+    const map: Record<string, Record<string, number>> = {};
+    const totalMap: Record<string, number> = {};
+    orders.filter(o => o.status === "completed").forEach((o) => {
+      const d = new Date(o.createdAt);
+      const key = `${d.toLocaleDateString("fr-FR", { month: "long" })} ${d.getFullYear()}`;
+      if (!map[key]) map[key] = {};
+      const svc = o.service.name;
+      map[key][svc] = (map[key][svc] || 0) + o.total;
+      totalMap[key] = (totalMap[key] || 0) + o.total;
+    });
+    return Object.entries(totalMap).map(([month, total]) => ({ month, total, details: map[month] }));
+  }, [orders]);
+
+  // By service
+  const serviceData = useMemo(() => {
+    const map: Record<string, { count: number; revenue: number }> = {};
+    orders.filter(o => o.status === "completed").forEach((o) => {
+      const k = o.service.name;
+      if (!map[k]) map[k] = { count: 0, revenue: 0 };
+      map[k].count += 1;
+      map[k].revenue += o.total;
+    });
+    return Object.entries(map).sort(([, a], [, b]) => b.revenue - a.revenue);
+  }, [orders]);
+
+  const totalRevenue = orders.filter(o => o.status === "completed").reduce((s, o) => s + o.total, 0);
+  const todayStr = today.toLocaleDateString("fr-FR");
+  const todayRevenue = dailyData.find(d => d.date === todayStr)?.total || 0;
+  const thisMonth = `${today.toLocaleDateString("fr-FR", { month: "long" })} ${today.getFullYear()}`;
+  const monthRevenue = monthlyData.find(d => d.month === thisMonth)?.total || 0;
+
+  const exportCSV = () => {
+    setExporting(true);
+    let csv = "Date,Service,Montant (FCFA)\n";
+    orders.filter(o => o.status === "completed").forEach(o => {
+      const d = new Date(o.createdAt).toLocaleDateString("fr-FR");
+      csv += `${d},${o.service.name},${o.total}\n`;
+    });
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `washgo-comptabilite-${today.toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Rapport CSV téléchargé !");
+    setExporting(false);
+  };
+
+  const exportJSON = () => {
+    const report = {
+      generated: today.toISOString(),
+      totalRevenue,
+      todayRevenue,
+      monthRevenue,
+      dailyBreakdown: dailyData,
+      monthlyBreakdown: monthlyData,
+      byService: serviceData.map(([name, d]) => ({ name, ...d })),
+      orders: orders.filter(o => o.status === "completed").map(o => ({
+        orderNumber: o.orderNumber,
+        date: new Date(o.createdAt).toLocaleDateString("fr-FR"),
+        client: o.clientName,
+        phone: o.clientPhone,
+        service: o.service.name,
+        payment: o.payment,
+        total: o.total,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `washgo-rapport-${today.toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Rapport JSON téléchargé !");
+  };
+
+  const exportText = () => {
+    let text = `═══════════════════════════════════════\n`;
+    text += `   RAPPORT COMPTABLE — WASHGO NIGER\n`;
+    text += `   Généré le ${today.toLocaleDateString("fr-FR")} à ${today.toLocaleTimeString("fr-FR")}\n`;
+    text += `═══════════════════════════════════════\n\n`;
+    text += `RÉSUMÉ GLOBAL\n`;
+    text += `─────────────────────────────────────\n`;
+    text += `  Chiffre d'affaires total : ${totalRevenue.toLocaleString("fr-FR")} FCFA\n`;
+    text += `  Recettes aujourd'hui     : ${todayRevenue.toLocaleString("fr-FR")} FCFA\n`;
+    text += `  Recettes ce mois         : ${monthRevenue.toLocaleString("fr-FR")} FCFA\n`;
+    text += `  Commandes complétées     : ${orders.filter(o => o.status === "completed").length}\n\n`;
+
+    text += `REVENUS PAR SERVICE\n`;
+    text += `─────────────────────────────────────\n`;
+    serviceData.forEach(([name, d]) => {
+      text += `  ${name.padEnd(25)} ${d.revenue.toLocaleString("fr-FR").padStart(10)} FCFA (${d.count} cmd)\n`;
+    });
+    text += `\n`;
+
+    text += `REVENUS MENSUELS\n`;
+    text += `─────────────────────────────────────\n`;
+    monthlyData.forEach(({ month, total, details }) => {
+      text += `\n  📅 ${month} — ${total.toLocaleString("fr-FR")} FCFA\n`;
+      Object.entries(details).forEach(([svc, amt]) => {
+        text += `     ${svc.padEnd(22)} ${amt.toLocaleString("fr-FR").padStart(10)} FCFA\n`;
+      });
+    });
+    text += `\n`;
+
+    text += `REVENUS JOURNALIERS (14 derniers jours)\n`;
+    text += `─────────────────────────────────────\n`;
+    dailyData.slice(0, 14).forEach(({ date, total }) => {
+      text += `  ${date}  ${total.toLocaleString("fr-FR").padStart(10)} FCFA\n`;
+    });
+
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `washgo-rapport-${today.toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Rapport texte téléchargé !");
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+      {/* Summary KPIs */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="glass-card rounded-2xl p-4 text-center">
+          <div className="text-lg font-extrabold text-foreground">{todayRevenue.toLocaleString("fr-FR")}</div>
+          <div className="text-[10px] text-muted-foreground">Aujourd'hui (FCFA)</div>
+        </div>
+        <div className="glass-card rounded-2xl p-4 text-center">
+          <div className="text-lg font-extrabold text-primary">{monthRevenue.toLocaleString("fr-FR")}</div>
+          <div className="text-[10px] text-muted-foreground">Ce mois (FCFA)</div>
+        </div>
+        <div className="glass-card rounded-2xl p-4 text-center">
+          <div className="text-lg font-extrabold text-secondary">{totalRevenue.toLocaleString("fr-FR")}</div>
+          <div className="text-[10px] text-muted-foreground">Total (FCFA)</div>
+        </div>
+      </div>
+
+      {/* Period selector */}
+      <div className="flex gap-1.5">
+        {([
+          { key: "daily" as const, label: "Journalier" },
+          { key: "monthly" as const, label: "Mensuel" },
+          { key: "global" as const, label: "Par service" },
+        ]).map((p) => (
+          <button key={p.key} onClick={() => setPeriod(p.key)} className={`flex-1 text-[11px] font-semibold py-2 rounded-xl transition-all ${period === p.key ? "hero-gradient text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Data */}
+      {period === "daily" && (
+        <div className="glass-card rounded-2xl p-5 space-y-2">
+          <h3 className="font-bold text-foreground text-sm mb-3 flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-primary" /> Recettes journalières
+          </h3>
+          {dailyData.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Aucune donnée</p>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {dailyData.slice(0, 30).map(({ date, total, details }) => (
+                <div key={date} className="p-3 rounded-xl bg-muted/30">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-bold text-foreground">{date}</span>
+                    <span className="text-sm font-extrabold text-primary">{total.toLocaleString("fr-FR")} F</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {Object.entries(details).map(([svc, amt]) => (
+                      <div key={svc} className="flex justify-between text-[10px] text-muted-foreground">
+                        <span>{svc}</span>
+                        <span>{amt.toLocaleString("fr-FR")} F</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {period === "monthly" && (
+        <div className="glass-card rounded-2xl p-5 space-y-2">
+          <h3 className="font-bold text-foreground text-sm mb-3 flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-primary" /> Recettes mensuelles
+          </h3>
+          {monthlyData.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Aucune donnée</p>
+          ) : (
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {monthlyData.map(({ month, total, details }) => (
+                <div key={month} className="p-3 rounded-xl bg-muted/30">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-bold text-foreground">📅 {month}</span>
+                    <span className="text-sm font-extrabold text-primary">{total.toLocaleString("fr-FR")} F</span>
+                  </div>
+                  <div className="space-y-1">
+                    {Object.entries(details).map(([svc, amt]) => (
+                      <div key={svc} className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground">{svc}</span>
+                        <span className="font-semibold text-foreground">{amt.toLocaleString("fr-FR")} F</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {period === "global" && (
+        <div className="glass-card rounded-2xl p-5 space-y-2">
+          <h3 className="font-bold text-foreground text-sm mb-3 flex items-center gap-2">
+            <Calculator className="w-4 h-4 text-primary" /> Revenus par service
+          </h3>
+          {serviceData.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Aucune donnée</p>
+          ) : (
+            <div className="space-y-2">
+              {serviceData.map(([name, d], i) => {
+                const pct = totalRevenue > 0 ? Math.round((d.revenue / totalRevenue) * 100) : 0;
+                return (
+                  <div key={name} className="p-3 rounded-xl bg-muted/30">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-sm font-bold text-foreground">{name}</span>
+                      <span className="text-sm font-extrabold text-primary">{d.revenue.toLocaleString("fr-FR")} F</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full hero-gradient rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-[10px] font-bold text-muted-foreground">{pct}%</span>
+                      <span className="text-[10px] text-muted-foreground">{d.count} cmd</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Export buttons */}
+      <div className="glass-card rounded-2xl p-5">
+        <h3 className="font-bold text-foreground text-sm mb-3 flex items-center gap-2">
+          <Download className="w-4 h-4 text-primary" /> Télécharger un rapport
+        </h3>
+        <div className="grid grid-cols-3 gap-2">
+          <Button variant="outline" size="sm" className="rounded-xl text-xs flex flex-col items-center gap-1 h-auto py-3" onClick={exportCSV} disabled={exporting}>
+            <FileSpreadsheet className="w-5 h-5 text-success" />
+            Excel/CSV
+          </Button>
+          <Button variant="outline" size="sm" className="rounded-xl text-xs flex flex-col items-center gap-1 h-auto py-3" onClick={exportJSON} disabled={exporting}>
+            <FileText className="w-5 h-5 text-primary" />
+            JSON
+          </Button>
+          <Button variant="outline" size="sm" className="rounded-xl text-xs flex flex-col items-center gap-1 h-auto py-3" onClick={exportText} disabled={exporting}>
+            <File className="w-5 h-5 text-secondary" />
+            Texte/PDF
+          </Button>
+        </div>
+      </div>
     </motion.div>
   );
 };
