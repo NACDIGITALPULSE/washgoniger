@@ -91,6 +91,7 @@ const AdminPage = () => {
     { key: "users", label: "Users", icon: "👥" },
     { key: "notifications", label: "Notifs", icon: "🔔" },
     { key: "receipts", label: "Reçus", icon: "🧾" },
+    { key: "accounting", label: "Compta", icon: "📈" },
     { key: "services", label: "Svcs", icon: "⚙️" },
     { key: "promos", label: "Promos", icon: "🏷️" },
     { key: "data", label: "Data", icon: "🗑️" },
