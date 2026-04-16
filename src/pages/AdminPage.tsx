@@ -162,6 +162,7 @@ const AdminPage = () => {
             {tab === "users" && <UsersTab key="usr" />}
             {tab === "notifications" && <NotificationsTab key="notif" orders={orders} />}
             {tab === "receipts" && <ReceiptsTab key="rcpt" orders={orders} />}
+            {tab === "accounting" && <AccountingTab key="acct" orders={orders} />}
             {tab === "services" && <ServicesTab key="svc" services={services} updateService={updateService} addService={addService} removeService={removeService} />}
             {tab === "promos" && <PromosTab key="promo" />}
             {tab === "data" && <DataTab key="data" />}
