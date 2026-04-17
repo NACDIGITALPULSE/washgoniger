@@ -142,16 +142,19 @@ const AdminPage = () => {
 
       {/* Tabs */}
       <div className="container max-w-4xl mx-auto px-4 -mt-4 relative z-10">
-        <div className="glass-card rounded-2xl p-1 flex shadow-lg overflow-x-auto scrollbar-none">
+        <div className="glass-card rounded-2xl p-1.5 flex shadow-xl overflow-x-auto scrollbar-none gap-1">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex-1 min-w-[55px] py-2 rounded-xl text-[10px] font-semibold transition-all whitespace-nowrap text-center ${
-                tab === t.key ? "hero-gradient text-primary-foreground shadow-md" : "text-muted-foreground hover:text-foreground"
+              className={`flex-shrink-0 min-w-[68px] py-2.5 px-3 rounded-xl text-[11px] font-bold transition-all whitespace-nowrap text-center flex flex-col items-center gap-0.5 ${
+                tab === t.key
+                  ? "hero-gradient text-primary-foreground shadow-md scale-105"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
             >
-              {t.icon} {t.label}
+              <span className="text-base leading-none">{t.icon}</span>
+              <span className="leading-none">{t.label}</span>
             </button>
           ))}
         </div>
