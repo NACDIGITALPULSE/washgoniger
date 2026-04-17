@@ -856,12 +856,24 @@ const ReceiptsTab = ({ orders }: { orders: Order[] }) => {
 
   const cashOrders = orders.filter(o => o.payment === "cash" && o.status !== "cancelled");
 
-  const downloadReceipt = (url: string, name: string) => {
-    const link = document.createElement("a");
-    link.href = url;
-    link.target = "_blank";
-    link.download = name;
-    link.click();
+  const downloadReceipt = async (url: string, name: string) => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("fetch failed");
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+      toast.success("Reçu téléchargé");
+    } catch {
+      window.open(url, "_blank");
+      toast.info("Téléchargement direct ouvert");
+    }
   };
 
   return (
