@@ -1,61 +1,18 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { Car, Shirt, ArrowRight, MapPin, Star, Zap, Phone, Shield, Clock, Award, ChevronRight, Bell, Moon, Sun, Gift, Trophy, Check, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
+import { Car, Shirt, ArrowRight, MapPin, Star, Zap, Phone, Shield, Clock, Award, ChevronRight, Bell, Moon, Sun, Trophy, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAppState } from "@/lib/store";
 import { useTheme } from "@/hooks/use-theme";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import logo from "@/assets/logo.png";
-
-const REWARDS = [
-  { points: 50, label: "500 F de réduction", value: 500, type: "discount" as const },
-  { points: 100, label: "1 000 F de réduction", value: 1000, type: "discount" as const },
-  { points: 200, label: "Lavage Standard gratuit", value: 3000, type: "free_service" as const },
-  { points: 350, label: "Nettoyage Complet gratuit", value: 7000, type: "free_service" as const },
-  { points: 500, label: "Vidange gratuite", value: 10000, type: "free_service" as const },
-];
 
 const Hero = () => {
   const navigate = useNavigate();
   const { services } = useAppState();
   const { theme, toggleTheme } = useTheme();
-  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
-  const [showRewards, setShowRewards] = useState(false);
-  const [redeeming, setRedeeming] = useState(false);
 
   const autoServices = services.filter((s) => s.category === "auto");
   const pressingServices = services.filter((s) => s.category === "pressing");
-  const savedPhone = localStorage.getItem("washgo_phone");
-
-  useEffect(() => {
-    if (!savedPhone) return;
-    const fetchPoints = async () => {
-      const { data } = await supabase
-        .from("loyalty_points")
-        .select("points")
-        .eq("user_phone", savedPhone);
-      if (data) setLoyaltyPoints(data.reduce((s, r) => s + r.points, 0));
-    };
-    fetchPoints();
-  }, [savedPhone]);
-
-  const redeemReward = async (reward: typeof REWARDS[0]) => {
-    if (loyaltyPoints < reward.points) { toast.error("Points insuffisants"); return; }
-    if (!savedPhone) return;
-    setRedeeming(true);
-    const { error } = await supabase.from("loyalty_points").insert({
-      user_phone: savedPhone,
-      points: -reward.points,
-      source: `reward:${reward.label}`,
-    });
-    if (!error) {
-      setLoyaltyPoints((prev) => prev - reward.points);
-      toast.success(`🎁 ${reward.label} débloqué !`, { description: "Applicable à votre prochaine commande" });
-    } else { toast.error("Erreur lors de l'échange"); }
-    setRedeeming(false);
-  };
 
   return (
     <section className="relative overflow-hidden bg-background min-h-screen">
