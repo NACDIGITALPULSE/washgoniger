@@ -71,50 +71,7 @@ const Hero = () => {
             <p className="text-base font-semibold text-muted-foreground mt-1">Lavage · Vidange · Pressing</p>
           </motion.div>
 
-          {/* Loyalty bar */}
-          {savedPhone && loyaltyPoints > 0 && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-5">
-              <button
-                onClick={() => setShowRewards(!showRewards)}
-                className="w-full flex items-center gap-2.5 bg-accent rounded-2xl px-4 py-3 border border-border"
-              >
-                <div className="w-8 h-8 rounded-xl hero-gradient flex items-center justify-center">
-                  <Gift className="w-4 h-4 text-primary-foreground" />
-                </div>
-                <span className="text-sm font-bold text-foreground">{loyaltyPoints} pts</span>
-                <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
-                  <Trophy className="w-3.5 h-3.5" /> Échanger
-                </span>
-              </button>
-              <AnimatePresence>
-                {showRewards && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                    <div className="mt-2 space-y-2">
-                      {REWARDS.map((r) => {
-                        const canRedeem = loyaltyPoints >= r.points;
-                        return (
-                          <div key={r.points} className={`flex items-center gap-3 rounded-xl px-4 py-3 border ${canRedeem ? "bg-card border-border" : "bg-muted border-transparent opacity-50"}`}>
-                            <span className="text-sm">{r.type === "free_service" ? "🎁" : "💰"}</span>
-                            <div className="flex-1">
-                              <div className="text-xs font-bold text-foreground">{r.label}</div>
-                              <div className="text-[10px] text-muted-foreground">{r.points} points</div>
-                            </div>
-                            <button
-                              disabled={!canRedeem || redeeming}
-                              onClick={() => redeemReward(r)}
-                              className={`text-xs font-bold px-3 py-1.5 rounded-lg ${canRedeem ? "hero-gradient text-primary-foreground" : "bg-muted text-muted-foreground"}`}
-                            >
-                              {canRedeem ? <Check className="w-3.5 h-3.5 inline" /> : "🔒"}
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          )}
+
 
           {/* Hero card */}
           <motion.div
