@@ -7,7 +7,7 @@ import {
   Plus, Trash2, Save, ArrowLeft, LogOut, Bell, MessageCircle, Search, Filter,
   Users, DollarSign, Send, UserCheck, Eye, EyeOff, Key, Mail, Calendar,
   Activity, Target, Percent, Archive, FileImage, Download, PackageCheck, Home as HomeIcon, AlertTriangle, Database,
-  Calculator, FileText, FileSpreadsheet, File
+  Calculator, FileText, FileSpreadsheet, File, Phone
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -41,7 +41,7 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 const ADMIN_WHATSAPP = "22788082987";
 const CHART_COLORS = ["hsl(215, 80%, 48%)", "hsl(155, 60%, 42%)", "hsl(38, 92%, 50%)", "hsl(0, 84%, 60%)", "hsl(270, 60%, 50%)", "hsl(190, 70%, 45%)"];
 
-type TabKey = "dashboard" | "orders" | "users" | "notifications" | "receipts" | "accounting" | "services" | "promos" | "data";
+type TabKey = "dashboard" | "orders" | "clients" | "users" | "notifications" | "receipts" | "accounting" | "services" | "promos" | "data";
 
 const AdminPage = () => {
   const { orders, updateOrderStatus, services, updateService, addService, removeService } = useAppState();
@@ -88,7 +88,8 @@ const AdminPage = () => {
   const tabs: { key: TabKey; label: string; icon: string }[] = [
     { key: "dashboard", label: "Stats", icon: "📊" },
     { key: "orders", label: "Cmd", icon: "📋" },
-    { key: "users", label: "Users", icon: "👥" },
+    { key: "clients", label: "Clients", icon: "📞" },
+    { key: "users", label: "Comptes", icon: "👥" },
     { key: "notifications", label: "Notifs", icon: "🔔" },
     { key: "receipts", label: "Reçus", icon: "🧾" },
     { key: "accounting", label: "Compta", icon: "📈" },
@@ -141,16 +142,19 @@ const AdminPage = () => {
 
       {/* Tabs */}
       <div className="container max-w-4xl mx-auto px-4 -mt-4 relative z-10">
-        <div className="glass-card rounded-2xl p-1 flex shadow-lg overflow-x-auto scrollbar-none">
+        <div className="glass-card rounded-2xl p-1.5 flex shadow-xl overflow-x-auto scrollbar-none gap-1">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex-1 min-w-[55px] py-2 rounded-xl text-[10px] font-semibold transition-all whitespace-nowrap text-center ${
-                tab === t.key ? "hero-gradient text-primary-foreground shadow-md" : "text-muted-foreground hover:text-foreground"
+              className={`flex-shrink-0 min-w-[68px] py-2.5 px-3 rounded-xl text-[11px] font-bold transition-all whitespace-nowrap text-center flex flex-col items-center gap-0.5 ${
+                tab === t.key
+                  ? "hero-gradient text-primary-foreground shadow-md scale-105"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
             >
-              {t.icon} {t.label}
+              <span className="text-base leading-none">{t.icon}</span>
+              <span className="leading-none">{t.label}</span>
             </button>
           ))}
         </div>
@@ -159,6 +163,7 @@ const AdminPage = () => {
           <AnimatePresence mode="wait">
             {tab === "dashboard" && <DashboardTab key="dash" orders={orders} totalRevenue={totalRevenue} />}
             {tab === "orders" && <OrdersTab key="ord" orders={orders} updateOrderStatus={updateOrderStatus} />}
+            {tab === "clients" && <ClientsTab key="cli" orders={orders} />}
             {tab === "users" && <UsersTab key="usr" />}
             {tab === "notifications" && <NotificationsTab key="notif" orders={orders} />}
             {tab === "receipts" && <ReceiptsTab key="rcpt" orders={orders} />}
@@ -365,6 +370,157 @@ const DashboardTab = ({ orders, totalRevenue }: { orders: Order[]; totalRevenue:
           ))}
         </div>
       </div>
+    </motion.div>
+  );
+};
+
+// ── Clients Tab (all phone numbers from orders) ──
+const ClientsTab = ({ orders }: { orders: Order[] }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [editingPhone, setEditingPhone] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editNewPhone, setEditNewPhone] = useState("");
+
+  const clients = useMemo(() => {
+    const map: Record<string, { name: string; phone: string; count: number; total: number; lastOrder: Date; points: number }> = {};
+    orders.forEach((o) => {
+      if (!map[o.clientPhone]) {
+        map[o.clientPhone] = { name: o.clientName, phone: o.clientPhone, count: 0, total: 0, lastOrder: o.createdAt, points: 0 };
+      }
+      map[o.clientPhone].count += 1;
+      map[o.clientPhone].total += o.total;
+      if (o.createdAt > map[o.clientPhone].lastOrder) map[o.clientPhone].lastOrder = o.createdAt;
+    });
+    return Object.values(map).sort((a, b) => b.total - a.total);
+  }, [orders]);
+
+  const [pointsByPhone, setPointsByPhone] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const fetchPoints = async () => {
+      const { data } = await supabase.from("loyalty_points").select("user_phone, points");
+      if (data) {
+        const m: Record<string, number> = {};
+        data.forEach((r: any) => { m[r.user_phone] = (m[r.user_phone] || 0) + r.points; });
+        setPointsByPhone(m);
+      }
+    };
+    fetchPoints();
+  }, [orders]);
+
+  const filtered = clients.filter((c) =>
+    !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.phone.includes(searchQuery)
+  );
+
+  const deleteClientOrders = async (phone: string, name: string) => {
+    if (!confirm(`Supprimer TOUTES les commandes de ${name} (${phone}) ? Cette action est irréversible.`)) return;
+    const { error } = await supabase.from("orders").delete().eq("client_phone", phone);
+    if (error) { toast.error("Erreur de suppression"); return; }
+    await supabase.from("loyalty_points").delete().eq("user_phone", phone);
+    toast.success(`Toutes les commandes de ${name} supprimées`);
+    setTimeout(() => window.location.reload(), 600);
+  };
+
+  const updateClient = async (oldPhone: string) => {
+    if (!editName.trim() || !editNewPhone.trim()) { toast.error("Nom et téléphone requis"); return; }
+    const { error } = await supabase
+      .from("orders")
+      .update({ client_name: editName.trim(), client_phone: editNewPhone.trim() })
+      .eq("client_phone", oldPhone);
+    if (error) { toast.error("Erreur"); return; }
+    if (editNewPhone.trim() !== oldPhone) {
+      await supabase.from("loyalty_points").update({ user_phone: editNewPhone.trim() }).eq("user_phone", oldPhone);
+    }
+    toast.success("Client mis à jour");
+    setEditingPhone(null);
+    setTimeout(() => window.location.reload(), 600);
+  };
+
+  const sendWA = (phone: string, name: string) => {
+    const p = phone.replace(/\D/g, "");
+    const fullPhone = p.startsWith("227") ? p : `227${p}`;
+    const msg = `Bonjour *${name}*,\n\nMerci d'être client chez WashGo Niger !\n\n🚗✨ *WashGo Niger*\n📞 +227 88 08 29 87`;
+    window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+      <div className="glass-card rounded-2xl p-4">
+        <h3 className="font-bold text-foreground text-sm flex items-center gap-2 mb-3">
+          <Phone className="w-4 h-4 text-primary" /> Tous les clients ({clients.length})
+        </h3>
+        <div className="relative">
+          <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Rechercher par nom ou téléphone..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl text-sm h-9" />
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center py-12 glass-card rounded-2xl">
+          <Users className="w-12 h-12 mx-auto text-muted-foreground/20 mb-3" />
+          <p className="text-muted-foreground text-sm">Aucun client</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((c, i) => {
+            const isEditing = editingPhone === c.phone;
+            const points = pointsByPhone[c.phone] || 0;
+            return (
+              <motion.div
+                key={c.phone}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.02 }}
+                className="glass-card rounded-2xl p-4"
+              >
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="rounded-xl text-sm h-9" placeholder="Nom" />
+                    <Input value={editNewPhone} onChange={(e) => setEditNewPhone(e.target.value)} className="rounded-xl text-sm h-9" placeholder="Téléphone" />
+                    <div className="flex gap-2">
+                      <Button variant="hero" size="sm" className="flex-1 rounded-xl h-8" onClick={() => updateClient(c.phone)}>
+                        <Save className="w-3.5 h-3.5" /> Enregistrer
+                      </Button>
+                      <Button variant="outline" size="sm" className="rounded-xl h-8" onClick={() => setEditingPhone(null)}>Annuler</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl hero-gradient flex items-center justify-center text-sm font-bold text-primary-foreground shrink-0">
+                        {i + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-foreground text-sm truncate">{c.name}</div>
+                        <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                          <Phone className="w-3 h-3" /> {c.phone}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">{c.count} cmd</span>
+                          <span className="text-[10px] font-semibold bg-success/10 text-success px-2 py-0.5 rounded-full">{c.total.toLocaleString("fr-FR")} F</span>
+                          {points > 0 && <span className="text-[10px] font-semibold bg-warning/10 text-warning px-2 py-0.5 rounded-full">⭐ {points} pts</span>}
+                        </div>
+                        <div className="text-[9px] text-muted-foreground mt-1">Dernière: {new Date(c.lastOrder).toLocaleDateString("fr-FR")}</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5 mt-3 pt-2 border-t border-border">
+                      <Button variant="outline" size="sm" className="flex-1 rounded-xl h-7 text-[10px] text-success border-success/20" onClick={() => sendWA(c.phone, c.name)}>
+                        <MessageCircle className="w-3 h-3" /> WhatsApp
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 rounded-xl h-7 text-[10px]" onClick={() => { setEditingPhone(c.phone); setEditName(c.name); setEditNewPhone(c.phone); }}>
+                        <Settings className="w-3 h-3" /> Modifier
+                      </Button>
+                      <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-destructive border-destructive/20" onClick={() => deleteClientOrders(c.phone, c.name)}>
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -703,12 +859,24 @@ const ReceiptsTab = ({ orders }: { orders: Order[] }) => {
 
   const cashOrders = orders.filter(o => o.payment === "cash" && o.status !== "cancelled");
 
-  const downloadReceipt = (url: string, name: string) => {
-    const link = document.createElement("a");
-    link.href = url;
-    link.target = "_blank";
-    link.download = name;
-    link.click();
+  const downloadReceipt = async (url: string, name: string) => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("fetch failed");
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+      toast.success("Reçu téléchargé");
+    } catch {
+      window.open(url, "_blank");
+      toast.info("Téléchargement direct ouvert");
+    }
   };
 
   return (
