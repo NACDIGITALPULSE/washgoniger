@@ -879,6 +879,78 @@ const ReceiptsTab = ({ orders }: { orders: Order[] }) => {
     }
   };
 
+  const generateCashReceipt = (order: Order) => {
+    const date = new Date(order.createdAt).toLocaleString("fr-FR");
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reçu ${order.orderNumber || order.id}</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:400px;margin:20px auto;padding:20px;color:#222}
+.header{text-align:center;border-bottom:2px dashed #333;padding-bottom:15px;margin-bottom:15px}
+.header h1{margin:0;color:#0a8f6e}
+.row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee}
+.label{color:#666;font-size:12px}
+.value{font-weight:bold;font-size:13px}
+.total{margin-top:15px;padding:12px;background:#0a8f6e;color:#fff;border-radius:8px;text-align:center;font-size:18px;font-weight:bold}
+.footer{margin-top:20px;text-align:center;font-size:11px;color:#888;border-top:2px dashed #333;padding-top:15px}
+</style></head><body>
+<div class="header">
+  <h1>WashGo Niger</h1>
+  <p style="margin:4px 0;font-size:12px">Lavage · Vidange · Pressing</p>
+  <p style="margin:0;font-size:11px;color:#666">Niamey · +227 88 08 29 87</p>
+</div>
+<h2 style="text-align:center;font-size:14px;margin:10px 0">REÇU DE PAIEMENT CASH</h2>
+<div class="row"><span class="label">N° Commande</span><span class="value">#${order.orderNumber || order.id.slice(0,8)}</span></div>
+<div class="row"><span class="label">Date</span><span class="value">${date}</span></div>
+<div class="row"><span class="label">Client</span><span class="value">${order.clientName}</span></div>
+<div class="row"><span class="label">Téléphone</span><span class="value">${order.clientPhone}</span></div>
+<div class="row"><span class="label">Service</span><span class="value">${order.service.name}</span></div>
+<div class="row"><span class="label">Quantité</span><span class="value">${order.quantity}</span></div>
+<div class="row"><span class="label">Lieu</span><span class="value">${order.location === "domicile" ? "À domicile" : "Sur place"}</span></div>
+<div class="row"><span class="label">Paiement</span><span class="value">💵 Cash</span></div>
+<div class="row"><span class="label">Statut</span><span class="value">${order.status}</span></div>
+<div class="total">TOTAL : ${order.total.toLocaleString("fr-FR")} FCFA</div>
+<div class="footer">
+  <p>Merci pour votre confiance ! 🙏</p>
+  <p>Reçu généré le ${new Date().toLocaleString("fr-FR")}</p>
+</div>
+<script>window.onload=()=>setTimeout(()=>window.print(),300);</script>
+</body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = `recu-cash-${order.orderNumber || order.id.slice(0,8)}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+    toast.success("Reçu Cash téléchargé");
+  };
+
+  const printCashReceipt = (order: Order) => {
+    const date = new Date(order.createdAt).toLocaleString("fr-FR");
+    const w = window.open("", "_blank");
+    if (!w) { toast.error("Popup bloqué"); return; }
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reçu ${order.orderNumber || order.id}</title>
+<style>body{font-family:Arial;max-width:400px;margin:20px auto;padding:20px}
+.h{text-align:center;border-bottom:2px dashed #333;padding-bottom:10px;margin-bottom:10px}
+.h h1{margin:0;color:#0a8f6e}
+.r{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee;font-size:13px}
+.t{margin-top:12px;padding:10px;background:#0a8f6e;color:#fff;border-radius:6px;text-align:center;font-weight:bold;font-size:16px}
+.f{margin-top:15px;text-align:center;font-size:11px;color:#666}</style></head><body>
+<div class="h"><h1>WashGo Niger</h1><p style="margin:4px 0;font-size:11px">Niamey · +227 88 08 29 87</p></div>
+<h3 style="text-align:center;font-size:13px">REÇU CASH #${order.orderNumber || order.id.slice(0,8)}</h3>
+<div class="r"><span>Date</span><b>${date}</b></div>
+<div class="r"><span>Client</span><b>${order.clientName}</b></div>
+<div class="r"><span>Téléphone</span><b>${order.clientPhone}</b></div>
+<div class="r"><span>Service</span><b>${order.service.name}</b></div>
+<div class="r"><span>Quantité</span><b>${order.quantity}</b></div>
+<div class="r"><span>Lieu</span><b>${order.location === "domicile" ? "Domicile" : "Sur place"}</b></div>
+<div class="t">TOTAL : ${order.total.toLocaleString("fr-FR")} FCFA</div>
+<div class="f">Merci pour votre confiance !</div>
+<script>setTimeout(()=>window.print(),400);</script></body></html>`);
+    w.document.close();
+  };
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
       <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
@@ -902,8 +974,16 @@ const ReceiptsTab = ({ orders }: { orders: Order[] }) => {
                   <div className="font-medium text-foreground text-sm truncate">{order.clientName}</div>
                   <div className="text-[10px] text-muted-foreground">{order.service.name} • {order.total.toLocaleString("fr-FR")} F</div>
                   {order.orderNumber && <div className="text-[10px] text-primary font-semibold">#{order.orderNumber}</div>}
+                  <div className="text-[10px] text-muted-foreground">{new Date(order.createdAt).toLocaleDateString("fr-FR")}</div>
                 </div>
-                <div className="text-[10px] text-muted-foreground">{new Date(order.createdAt).toLocaleDateString("fr-FR")}</div>
+                <div className="flex gap-1 shrink-0">
+                  <button onClick={() => printCashReceipt(order)} title="Imprimer" className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20">
+                    <Eye className="w-4 h-4 text-primary" />
+                  </button>
+                  <button onClick={() => generateCashReceipt(order)} title="Télécharger" className="p-2 rounded-lg bg-success/10 hover:bg-success/20">
+                    <Download className="w-4 h-4 text-success" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
