@@ -78,43 +78,71 @@ const Hero = () => {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="hero-gradient rounded-3xl p-6 mb-6 relative overflow-hidden"
+            className="hero-gradient rounded-3xl p-6 mb-6 relative overflow-hidden shadow-2xl"
           >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent_60%)]" />
+            <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary-foreground/10 blur-2xl" />
             <div className="relative text-center">
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.2, type: "spring" }}
-                className="w-14 h-14 rounded-2xl bg-primary-foreground/20 backdrop-blur flex items-center justify-center mx-auto mb-3"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-foreground/20 backdrop-blur mb-3 border border-primary-foreground/30"
               >
-                <Sparkles className="w-7 h-7 text-primary-foreground" />
+                <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
+                <span className="text-[10px] font-bold text-primary-foreground uppercase tracking-wider">Nouveau</span>
               </motion.div>
-              <h2 className="text-primary-foreground font-bold text-xl leading-tight mb-2">
-                Votre véhicule mérite<br />le meilleur soin
+              <h2 className="text-primary-foreground font-extrabold text-2xl leading-tight mb-2">
+                Commandez en<br />moins de 60 secondes ⚡
               </h2>
-              <p className="text-primary-foreground/70 text-sm mb-5">
-                Lavage auto & pressing à domicile
+              <p className="text-primary-foreground/80 text-sm mb-5 font-medium">
+                Lavage, vidange & pressing à domicile
               </p>
-              <div className="flex gap-3 justify-center">
-                <Button
-                  size="lg"
-                  className="rounded-2xl h-12 px-6 text-sm font-bold bg-primary-foreground text-foreground hover:bg-primary-foreground/90 shadow-lg flex-1 max-w-[150px] group"
+              <div className="grid grid-cols-2 gap-3">
+                <motion.button
+                  whileHover={{ scale: 1.03, y: -2 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => navigate("/services/auto")}
+                  className="group relative overflow-hidden rounded-2xl bg-primary-foreground text-foreground p-4 shadow-xl hover:shadow-2xl transition-shadow"
                 >
-                  <Car className="w-4 h-4" />
-                  Auto
-                  <ArrowRight className="w-3.5 h-3.5 ml-auto group-hover:translate-x-1 transition-transform" />
-                </Button>
-                <Button
-                  size="lg"
-                  className="rounded-2xl h-12 px-6 text-sm font-bold border-2 border-primary-foreground/30 text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20 shadow-lg flex-1 max-w-[150px] group"
+                  <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-primary/10 blur-xl group-hover:bg-primary/20 transition-colors" />
+                  <div className="relative flex flex-col items-start gap-2">
+                    <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                      <Car className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="text-left">
+                      <div className="font-extrabold text-base leading-none">Auto</div>
+                      <div className="text-[10px] text-muted-foreground mt-1 font-medium">Lavage · Vidange</div>
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] font-bold text-primary mt-1">
+                      Démarrer <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.03, y: -2 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => navigate("/services/pressing")}
+                  className="group relative overflow-hidden rounded-2xl bg-primary-foreground text-foreground p-4 shadow-xl hover:shadow-2xl transition-shadow"
                 >
-                  <Shirt className="w-4 h-4" />
-                  Pressing
-                  <ArrowRight className="w-3.5 h-3.5 ml-auto group-hover:translate-x-1 transition-transform" />
-                </Button>
+                  <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-secondary/10 blur-xl group-hover:bg-secondary/20 transition-colors" />
+                  <div className="relative flex flex-col items-start gap-2">
+                    <div className="w-10 h-10 rounded-xl bg-secondary/15 flex items-center justify-center">
+                      <Shirt className="w-5 h-5 text-secondary" />
+                    </div>
+                    <div className="text-left">
+                      <div className="font-extrabold text-base leading-none">Pressing</div>
+                      <div className="text-[10px] text-muted-foreground mt-1 font-medium">Lavage · Repassage</div>
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] font-bold text-secondary mt-1">
+                      Démarrer <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </motion.button>
+              </div>
+              <div className="flex items-center justify-center gap-1.5 mt-4 text-primary-foreground/80">
+                <Clock className="w-3 h-3" />
+                <span className="text-[10px] font-semibold">Livraison en 30 min · Paiement sécurisé</span>
               </div>
             </div>
           </motion.div>
