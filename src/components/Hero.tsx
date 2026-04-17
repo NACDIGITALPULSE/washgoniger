@@ -31,7 +31,7 @@ const Hero = () => {
               <motion.img
                 src={logo}
                 alt="WashGo Niger"
-                className="w-16 h-16 rounded-2xl object-contain shadow-xl bg-card p-1.5 border-2 border-primary/20"
+                className="w-20 h-20 object-contain drop-shadow-xl mix-blend-multiply dark:mix-blend-screen"
                 whileHover={{ rotate: [0, -5, 5, 0] }}
               />
             </div>
