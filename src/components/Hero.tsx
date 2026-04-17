@@ -301,19 +301,29 @@ const ServiceSection = ({ title, emoji, services, onSeeAll, onServiceClick, dela
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: delay + 0.08 + i * 0.06 }}
-          className="glass-card rounded-2xl p-4 cursor-pointer hover:scale-[1.02] active:scale-[0.97] transition-all duration-200 group"
+          whileHover={{ y: -4 }}
+          whileTap={{ scale: 0.97 }}
+          className="glass-card rounded-2xl p-4 cursor-pointer transition-all duration-200 group relative overflow-hidden"
           onClick={() => onServiceClick(service.id)}
         >
-          <div className="w-11 h-11 rounded-xl bg-accent flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition-transform">
-            {service.icon}
+          <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full bg-primary/5 blur-xl group-hover:bg-primary/15 transition-colors" />
+          <div className="relative">
+            <div className="w-12 h-12 rounded-2xl hero-gradient flex items-center justify-center text-2xl mb-3 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-transform">
+              {service.icon}
+            </div>
+            <h3 className="font-bold text-foreground text-sm mb-1 leading-tight">{service.name}</h3>
+            <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2 mb-2">{service.description}</p>
+            <div className="flex items-center justify-between">
+              {service.options && (service.options as any[]).length > 0 && (
+                <p className="text-sm font-extrabold text-primary">
+                  {Math.min(...(service.options as any[]).map((o: any) => o.price)).toLocaleString("fr-FR")} F
+                </p>
+              )}
+              <div className="w-7 h-7 rounded-full hero-gradient flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <ArrowRight className="w-3.5 h-3.5 text-primary-foreground" />
+              </div>
+            </div>
           </div>
-          <h3 className="font-bold text-foreground text-sm mb-1 leading-tight">{service.name}</h3>
-          <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2 mb-2">{service.description}</p>
-          {service.options && (service.options as any[]).length > 0 && (
-            <p className="text-xs font-bold text-primary">
-              {Math.min(...(service.options as any[]).map((o: any) => o.price)).toLocaleString("fr-FR")} F
-            </p>
-          )}
         </motion.div>
       ))}
     </div>
