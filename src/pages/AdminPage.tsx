@@ -41,7 +41,7 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 const ADMIN_WHATSAPP = "22788082987";
 const CHART_COLORS = ["hsl(215, 80%, 48%)", "hsl(155, 60%, 42%)", "hsl(38, 92%, 50%)", "hsl(0, 84%, 60%)", "hsl(270, 60%, 50%)", "hsl(190, 70%, 45%)"];
 
-type TabKey = "dashboard" | "orders" | "users" | "notifications" | "receipts" | "accounting" | "services" | "promos" | "data";
+type TabKey = "dashboard" | "orders" | "clients" | "users" | "notifications" | "receipts" | "accounting" | "services" | "promos" | "data";
 
 const AdminPage = () => {
   const { orders, updateOrderStatus, services, updateService, addService, removeService } = useAppState();
@@ -88,7 +88,8 @@ const AdminPage = () => {
   const tabs: { key: TabKey; label: string; icon: string }[] = [
     { key: "dashboard", label: "Stats", icon: "📊" },
     { key: "orders", label: "Cmd", icon: "📋" },
-    { key: "users", label: "Users", icon: "👥" },
+    { key: "clients", label: "Clients", icon: "📞" },
+    { key: "users", label: "Comptes", icon: "👥" },
     { key: "notifications", label: "Notifs", icon: "🔔" },
     { key: "receipts", label: "Reçus", icon: "🧾" },
     { key: "accounting", label: "Compta", icon: "📈" },
@@ -159,6 +160,7 @@ const AdminPage = () => {
           <AnimatePresence mode="wait">
             {tab === "dashboard" && <DashboardTab key="dash" orders={orders} totalRevenue={totalRevenue} />}
             {tab === "orders" && <OrdersTab key="ord" orders={orders} updateOrderStatus={updateOrderStatus} />}
+            {tab === "clients" && <ClientsTab key="cli" orders={orders} />}
             {tab === "users" && <UsersTab key="usr" />}
             {tab === "notifications" && <NotificationsTab key="notif" orders={orders} />}
             {tab === "receipts" && <ReceiptsTab key="rcpt" orders={orders} />}
