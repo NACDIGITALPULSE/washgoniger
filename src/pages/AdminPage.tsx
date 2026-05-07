@@ -7,7 +7,7 @@ import {
   Plus, Trash2, Save, ArrowLeft, LogOut, Bell, MessageCircle, Search, Filter,
   Users, DollarSign, Send, UserCheck, Eye, EyeOff, Key, Mail, Calendar,
   Activity, Target, Percent, Archive, FileImage, Download, PackageCheck, Home as HomeIcon, AlertTriangle, Database,
-  Calculator, FileText, FileSpreadsheet, File, Phone
+  Calculator, FileText, FileSpreadsheet, File, Phone, Printer
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -121,7 +121,43 @@ const generateOrderInvoicePDF = (order: Order) => {
   doc.setTextColor(130);
   doc.text("WashGo Niger — Niamey, Niger", w / 2, y, { align: "center" });
 
+  return doc;
+};
+
+const downloadOrderPDF = (order: Order) => {
+  const doc = generateOrderInvoicePDF(order);
+  const orderNumber = order.orderNumber || order.id.slice(0, 8).toUpperCase();
   doc.save(`Facture-${orderNumber}.pdf`);
+};
+
+const printOrderPDF = (order: Order) => {
+  const doc = generateOrderInvoicePDF(order);
+  const url = doc.output("bloburl");
+  const win = window.open(url as unknown as string, "_blank");
+  if (win) {
+    win.addEventListener("load", () => {
+      try { win.focus(); win.print(); } catch {}
+    });
+  }
+};
+
+const sendOrderPDFWhatsApp = async (order: Order) => {
+  const doc = generateOrderInvoicePDF(order);
+  const orderNumber = order.orderNumber || order.id.slice(0, 8).toUpperCase();
+  const blob = doc.output("blob");
+  const file = new (window as any).File([blob], `Facture-${orderNumber}.pdf`, { type: "application/pdf" });
+  const p = order.clientPhone.replace(/\D/g, "");
+  const fullPhone = p.startsWith("227") ? p : `227${p}`;
+  const message = `🧾 *Reçu WashGo Niger*\nN° ${orderNumber}\nClient: ${order.clientName}\nService: ${order.service.name}\nTotal: ${order.total.toLocaleString("fr-FR")} FCFA\n\nMerci pour votre confiance ! 🚗✨`;
+  const nav: any = navigator;
+  try {
+    if (nav.canShare && nav.canShare({ files: [file] })) {
+      await nav.share({ files: [file], title: `Reçu ${orderNumber}`, text: message });
+      return;
+    }
+  } catch {}
+  doc.save(`Facture-${orderNumber}.pdf`);
+  window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, "_blank");
 };
 
 const statusActions: Record<string, { next: Order["status"]; label: string }> = {
@@ -634,6 +670,25 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const downloadSelected = async () => {
+    const list = orders.filter((o) => selectedIds.has(o.id));
+    if (list.length === 0) { toast.error("Aucune commande sélectionnée"); return; }
+    for (const o of list) {
+      downloadOrderPDF(o);
+      await new Promise((r) => setTimeout(r, 300));
+    }
+    toast.success(`${list.length} reçu(s) téléchargé(s)`);
+  };
 
   const deleteOrder = async (id: string) => {
     if (!confirm("Supprimer cette commande ?")) return;
@@ -692,6 +747,18 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
         ))}
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="glass-card rounded-xl p-3 flex items-center justify-between">
+          <span className="text-xs font-semibold text-foreground">{selectedIds.size} sélectionnée(s)</span>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={() => setSelectedIds(new Set())}>Annuler</Button>
+            <Button size="sm" variant="hero" className="rounded-xl h-8 text-xs gap-1" onClick={downloadSelected}>
+              <Download className="w-3.5 h-3.5" /> Télécharger les reçus
+            </Button>
+          </div>
+        </div>
+      )}
+
       {allFiltered.length === 0 ? (
         <div className="text-center py-16">
           <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground/20 mb-3" />
@@ -702,8 +769,15 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
           const status = statusLabels[order.status];
           const action = statusActions[order.status];
           return (
-            <motion.div key={order.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className="glass-card rounded-2xl p-4">
-              <div className="flex items-start justify-between mb-2">
+            <motion.div key={order.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className={`glass-card rounded-2xl p-4 ${selectedIds.has(order.id) ? "ring-2 ring-primary" : ""}`}>
+              <div className="flex items-start justify-between mb-2 gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(order.id)}
+                  onChange={() => toggleSelect(order.id)}
+                  className="mt-1 w-4 h-4 accent-primary cursor-pointer"
+                  title="Sélectionner"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-foreground text-sm">
                     {order.service.icon} {order.service.name} — {order.selectedOption.name}
@@ -719,12 +793,18 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-border">
                 <span className="text-sm font-extrabold text-primary">{order.total.toLocaleString("fr-FR")} F</span>
-                <div className="flex gap-1.5">
-                  <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-success border-success/20" onClick={() => openWhatsApp(order)}>
+                <div className="flex gap-1.5 flex-wrap justify-end">
+                  <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-success border-success/20" onClick={() => openWhatsApp(order)} title="Message WhatsApp">
                     <MessageCircle className="w-3.5 h-3.5" />
                   </Button>
-                  <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-primary border-primary/20" onClick={() => { generateOrderInvoicePDF(order); toast.success("Reçu PDF téléchargé"); }} title="Télécharger reçu PDF">
+                  <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-primary border-primary/20" onClick={() => { downloadOrderPDF(order); toast.success("Reçu PDF téléchargé"); }} title="Télécharger reçu PDF">
                     <FileText className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-foreground" onClick={() => printOrderPDF(order)} title="Imprimer le reçu">
+                    <Printer className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-success border-success/20" onClick={() => sendOrderPDFWhatsApp(order)} title="Envoyer reçu PDF via WhatsApp">
+                    <Send className="w-3.5 h-3.5" />
                   </Button>
                   {order.status === "pending" && (
                     <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-xs" onClick={() => updateOrderStatus(order.id, "cancelled")}>Refuser</Button>

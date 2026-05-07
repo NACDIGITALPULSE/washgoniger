@@ -13,6 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 const ADMIN_WHATSAPP = "22788082987";
 
+type GeoPos = { lat: number; lng: number };
+
 const OrderPage = () => {
   const { serviceId } = useParams();
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ const OrderPage = () => {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [savedLocation, setSavedLocation] = useState<GeoPos | null>(null);
   const [promoInput, setPromoInput] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
@@ -124,9 +127,8 @@ const OrderPage = () => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
-        const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-        const message = `📍 Voici ma position pour la commande *WashGo Niger* :\n${mapUrl}\n\nNom: ${name || "Client"}\nTél: ${phone}`;
-        window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(message)}`, "_blank");
+        setSavedLocation({ lat: latitude, lng: longitude });
+        toast.success("📍 Position enregistrée — elle sera envoyée avec votre commande");
         setGettingLocation(false);
       },
       () => {
@@ -177,27 +179,24 @@ const OrderPage = () => {
 
     localStorage.setItem("washgo_phone", phone);
 
-    // WhatsApp notification to admin
-    const optionsText = optionsArray.map(o => `${o.option.name} ×${o.quantity}`).join(", ");
+    // WhatsApp notification to admin (combine order + receipt + saved location)
+    const optionsText = optionsArray.map(o => `• ${o.option.name} ×${o.quantity}${o.option.unit === "kg" ? " kg" : ""} — ${(o.option.price * o.quantity).toLocaleString("fr-FR")} F`).join("\n");
     const locationText = location === "domicile" ? `🏠 Domicile${address ? ` — ${address}` : ""}` : "🏪 Sur place";
     const payLabel = paymentMethods.find(p => p.id === payment)?.label || payment;
-    const adminMsg = `🧾 *Nouvelle commande WashGo Niger*\n\n📋 N° ${orderNumber}\n👤 ${name}\n📞 ${phone}\n\n🔧 ${service.icon} ${service.name}\n${optionsText}\n💰 *${total.toLocaleString("fr-FR")} FCFA*\n📍 ${locationText}\n💳 ${payLabel}`;
+    const mapLine = savedLocation
+      ? `\n📍 *Position GPS:* https://www.google.com/maps?q=${savedLocation.lat},${savedLocation.lng}`
+      : "";
+    const promoLine = appliedPromo ? `\n🏷️ Code: ${appliedPromo.code} (-${discount.toLocaleString("fr-FR")} F)` : "";
+    const adminMsg =
+      `🧾 *Nouvelle commande WashGo Niger*\n\n` +
+      `📋 N° ${orderNumber}\n` +
+      `👤 ${name}\n📞 ${phone}\n\n` +
+      `🔧 ${service.icon} ${service.name}\n${optionsText}\n` +
+      `${promoLine}\n` +
+      `💰 *Total: ${total.toLocaleString("fr-FR")} FCFA*\n` +
+      `📍 ${locationText}\n💳 ${payLabel}` +
+      `${mapLine}\n\n— Reçu envoyé au client —`;
     window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(adminMsg)}`, "_blank");
-
-    // If domicile, also share location
-    if (location === "domicile" && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-          const locMsg = `📍 *Position pour commande ${orderNumber}*\n${mapUrl}\n\nNom: ${name}\nTél: ${phone}`;
-          setTimeout(() => {
-            window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(locMsg)}`, "_blank");
-          }, 1500);
-        },
-        () => {}
-      );
-    }
 
     toast.success("Commande envoyée ! 🎉");
     navigate("/order-confirmation", { state: { order } });
@@ -363,7 +362,7 @@ const OrderPage = () => {
             disabled={gettingLocation}
           >
             <Share2 className="w-3.5 h-3.5" />
-            {gettingLocation ? "Récupération..." : "📍 Partager ma position par WhatsApp"}
+            {gettingLocation ? "Récupération..." : savedLocation ? "✅ Position enregistrée — Re-partager" : "📍 Partager ma position"}
           </Button>
         </section>
 
@@ -473,7 +472,7 @@ const OrderPage = () => {
                 </div>
               </div>
               <Button variant="hero" size="lg" className="w-full rounded-2xl h-14 text-base font-bold" onClick={handleSubmit}>
-                Commander maintenant 🚀
+                Commander maintenant
               </Button>
             </motion.div>
           )}
