@@ -747,6 +747,18 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
         ))}
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="glass-card rounded-xl p-3 flex items-center justify-between">
+          <span className="text-xs font-semibold text-foreground">{selectedIds.size} sélectionnée(s)</span>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={() => setSelectedIds(new Set())}>Annuler</Button>
+            <Button size="sm" variant="hero" className="rounded-xl h-8 text-xs gap-1" onClick={downloadSelected}>
+              <Download className="w-3.5 h-3.5" /> Télécharger les reçus
+            </Button>
+          </div>
+        </div>
+      )}
+
       {allFiltered.length === 0 ? (
         <div className="text-center py-16">
           <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground/20 mb-3" />
