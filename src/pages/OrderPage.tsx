@@ -28,6 +28,7 @@ const OrderPage = () => {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [savedLocation, setSavedLocation] = useState<GeoPos | null>(null);
   const [promoInput, setPromoInput] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
