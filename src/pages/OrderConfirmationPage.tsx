@@ -278,10 +278,16 @@ const OrderConfirmationPage = () => {
         transition={{ delay: 0.6 }}
         className="w-full max-w-sm space-y-3"
       >
-        <Button onClick={downloadInvoicePDF} variant="outline" className="w-full rounded-2xl h-12">
-          <Download className="w-4 h-4 mr-1.5" />
-          Télécharger la facture PDF
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button onClick={downloadInvoicePDF} variant="outline" className="rounded-2xl h-12">
+            <Download className="w-4 h-4 mr-1" />
+            Télécharger
+          </Button>
+          <Button onClick={sendReceiptWhatsApp} className="rounded-2xl h-12 bg-[#25D366] hover:bg-[#25D366]/90 text-white">
+            <Send className="w-4 h-4 mr-1" />
+            WhatsApp
+          </Button>
+        </div>
 
         {/* Receipt upload for Nita/Amanata */}
         {(order.payment === "nita" || order.payment === "amanata") && (
