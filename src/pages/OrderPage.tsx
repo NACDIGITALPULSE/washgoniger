@@ -362,7 +362,7 @@ const OrderPage = () => {
             disabled={gettingLocation}
           >
             <Share2 className="w-3.5 h-3.5" />
-            {gettingLocation ? "Récupération..." : "📍 Partager ma position par WhatsApp"}
+            {gettingLocation ? "Récupération..." : savedLocation ? "✅ Position enregistrée — Re-partager" : "📍 Partager ma position"}
           </Button>
         </section>
 
