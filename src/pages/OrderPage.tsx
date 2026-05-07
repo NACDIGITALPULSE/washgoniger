@@ -127,9 +127,8 @@ const OrderPage = () => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
-        const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-        const message = `📍 Voici ma position pour la commande *WashGo Niger* :\n${mapUrl}\n\nNom: ${name || "Client"}\nTél: ${phone}`;
-        window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(message)}`, "_blank");
+        setSavedLocation({ lat: latitude, lng: longitude });
+        toast.success("📍 Position enregistrée — elle sera envoyée avec votre commande");
         setGettingLocation(false);
       },
       () => {
