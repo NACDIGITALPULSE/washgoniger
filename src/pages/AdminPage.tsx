@@ -769,8 +769,15 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
           const status = statusLabels[order.status];
           const action = statusActions[order.status];
           return (
-            <motion.div key={order.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className="glass-card rounded-2xl p-4">
-              <div className="flex items-start justify-between mb-2">
+            <motion.div key={order.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className={`glass-card rounded-2xl p-4 ${selectedIds.has(order.id) ? "ring-2 ring-primary" : ""}`}>
+              <div className="flex items-start justify-between mb-2 gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(order.id)}
+                  onChange={() => toggleSelect(order.id)}
+                  className="mt-1 w-4 h-4 accent-primary cursor-pointer"
+                  title="Sélectionner"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-foreground text-sm">
                     {order.service.icon} {order.service.name} — {order.selectedOption.name}
@@ -786,12 +793,18 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-border">
                 <span className="text-sm font-extrabold text-primary">{order.total.toLocaleString("fr-FR")} F</span>
-                <div className="flex gap-1.5">
-                  <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-success border-success/20" onClick={() => openWhatsApp(order)}>
+                <div className="flex gap-1.5 flex-wrap justify-end">
+                  <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-success border-success/20" onClick={() => openWhatsApp(order)} title="Message WhatsApp">
                     <MessageCircle className="w-3.5 h-3.5" />
                   </Button>
-                  <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-primary border-primary/20" onClick={() => { generateOrderInvoicePDF(order); toast.success("Reçu PDF téléchargé"); }} title="Télécharger reçu PDF">
+                  <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-primary border-primary/20" onClick={() => { downloadOrderPDF(order); toast.success("Reçu PDF téléchargé"); }} title="Télécharger reçu PDF">
                     <FileText className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-foreground" onClick={() => printOrderPDF(order)} title="Imprimer le reçu">
+                    <Printer className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-success border-success/20" onClick={() => sendOrderPDFWhatsApp(order)} title="Envoyer reçu PDF via WhatsApp">
+                    <Send className="w-3.5 h-3.5" />
                   </Button>
                   {order.status === "pending" && (
                     <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-xs" onClick={() => updateOrderStatus(order.id, "cancelled")}>Refuser</Button>
