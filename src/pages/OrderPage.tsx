@@ -472,7 +472,7 @@ const OrderPage = () => {
                 </div>
               </div>
               <Button variant="hero" size="lg" className="w-full rounded-2xl h-14 text-base font-bold" onClick={handleSubmit}>
-                Commander maintenant 🚀
+                Commander maintenant
               </Button>
             </motion.div>
           )}
