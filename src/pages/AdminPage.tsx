@@ -121,7 +121,43 @@ const generateOrderInvoicePDF = (order: Order) => {
   doc.setTextColor(130);
   doc.text("WashGo Niger — Niamey, Niger", w / 2, y, { align: "center" });
 
+  return doc;
+};
+
+const downloadOrderPDF = (order: Order) => {
+  const doc = generateOrderInvoicePDF(order);
+  const orderNumber = order.orderNumber || order.id.slice(0, 8).toUpperCase();
   doc.save(`Facture-${orderNumber}.pdf`);
+};
+
+const printOrderPDF = (order: Order) => {
+  const doc = generateOrderInvoicePDF(order);
+  const url = doc.output("bloburl");
+  const win = window.open(url as unknown as string, "_blank");
+  if (win) {
+    win.addEventListener("load", () => {
+      try { win.focus(); win.print(); } catch {}
+    });
+  }
+};
+
+const sendOrderPDFWhatsApp = async (order: Order) => {
+  const doc = generateOrderInvoicePDF(order);
+  const orderNumber = order.orderNumber || order.id.slice(0, 8).toUpperCase();
+  const blob = doc.output("blob");
+  const file = new File([blob], `Facture-${orderNumber}.pdf`, { type: "application/pdf" });
+  const p = order.clientPhone.replace(/\D/g, "");
+  const fullPhone = p.startsWith("227") ? p : `227${p}`;
+  const message = `🧾 *Reçu WashGo Niger*\nN° ${orderNumber}\nClient: ${order.clientName}\nService: ${order.service.name}\nTotal: ${order.total.toLocaleString("fr-FR")} FCFA\n\nMerci pour votre confiance ! 🚗✨`;
+  const nav: any = navigator;
+  try {
+    if (nav.canShare && nav.canShare({ files: [file] })) {
+      await nav.share({ files: [file], title: `Reçu ${orderNumber}`, text: message });
+      return;
+    }
+  } catch {}
+  doc.save(`Facture-${orderNumber}.pdf`);
+  window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, "_blank");
 };
 
 const statusActions: Record<string, { next: Order["status"]; label: string }> = {
