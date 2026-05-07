@@ -179,27 +179,24 @@ const OrderPage = () => {
 
     localStorage.setItem("washgo_phone", phone);
 
-    // WhatsApp notification to admin
-    const optionsText = optionsArray.map(o => `${o.option.name} ×${o.quantity}`).join(", ");
+    // WhatsApp notification to admin (combine order + receipt + saved location)
+    const optionsText = optionsArray.map(o => `• ${o.option.name} ×${o.quantity}${o.option.unit === "kg" ? " kg" : ""} — ${(o.option.price * o.quantity).toLocaleString("fr-FR")} F`).join("\n");
     const locationText = location === "domicile" ? `🏠 Domicile${address ? ` — ${address}` : ""}` : "🏪 Sur place";
     const payLabel = paymentMethods.find(p => p.id === payment)?.label || payment;
-    const adminMsg = `🧾 *Nouvelle commande WashGo Niger*\n\n📋 N° ${orderNumber}\n👤 ${name}\n📞 ${phone}\n\n🔧 ${service.icon} ${service.name}\n${optionsText}\n💰 *${total.toLocaleString("fr-FR")} FCFA*\n📍 ${locationText}\n💳 ${payLabel}`;
+    const mapLine = savedLocation
+      ? `\n📍 *Position GPS:* https://www.google.com/maps?q=${savedLocation.lat},${savedLocation.lng}`
+      : "";
+    const promoLine = appliedPromo ? `\n🏷️ Code: ${appliedPromo.code} (-${discount.toLocaleString("fr-FR")} F)` : "";
+    const adminMsg =
+      `🧾 *Nouvelle commande WashGo Niger*\n\n` +
+      `📋 N° ${orderNumber}\n` +
+      `👤 ${name}\n📞 ${phone}\n\n` +
+      `🔧 ${service.icon} ${service.name}\n${optionsText}\n` +
+      `${promoLine}\n` +
+      `💰 *Total: ${total.toLocaleString("fr-FR")} FCFA*\n` +
+      `📍 ${locationText}\n💳 ${payLabel}` +
+      `${mapLine}\n\n— Reçu envoyé au client —`;
     window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(adminMsg)}`, "_blank");
-
-    // If domicile, also share location
-    if (location === "domicile" && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
-          const locMsg = `📍 *Position pour commande ${orderNumber}*\n${mapUrl}\n\nNom: ${name}\nTél: ${phone}`;
-          setTimeout(() => {
-            window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(locMsg)}`, "_blank");
-          }, 1500);
-        },
-        () => {}
-      );
-    }
 
     toast.success("Commande envoyée ! 🎉");
     navigate("/order-confirmation", { state: { order } });
