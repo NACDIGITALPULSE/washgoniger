@@ -13,6 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 const ADMIN_WHATSAPP = "22788082987";
 
+type GeoPos = { lat: number; lng: number };
+
 const OrderPage = () => {
   const { serviceId } = useParams();
   const navigate = useNavigate();
