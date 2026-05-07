@@ -670,6 +670,25 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const downloadSelected = async () => {
+    const list = orders.filter((o) => selectedIds.has(o.id));
+    if (list.length === 0) { toast.error("Aucune commande sélectionnée"); return; }
+    for (const o of list) {
+      downloadOrderPDF(o);
+      await new Promise((r) => setTimeout(r, 300));
+    }
+    toast.success(`${list.length} reçu(s) téléchargé(s)`);
+  };
 
   const deleteOrder = async (id: string) => {
     if (!confirm("Supprimer cette commande ?")) return;
