@@ -36,7 +36,7 @@ const OrderConfirmationPage = () => {
     cash: "Cash", nita: "Nita", amanata: "Amanata"
   };
 
-  const downloadInvoicePDF = () => {
+  const buildInvoicePDF = () => {
     const doc = new jsPDF({ unit: "mm", format: "a5" });
     const w = doc.internal.pageSize.getWidth();
     let y = 15;
@@ -130,20 +130,46 @@ const OrderConfirmationPage = () => {
     doc.setTextColor(130);
     doc.text("WashGo Niger — Niamey, Niger", w / 2, y, { align: "center" });
 
-    doc.save(`Facture-${orderNumber}.pdf`);
+    return doc;
+  };
+
+  const downloadInvoicePDF = () => {
+    buildInvoicePDF().save(`Facture-${orderNumber}.pdf`);
     toast.success("Facture PDF téléchargée !");
   };
 
-  const sendReceiptWhatsApp = () => {
+  const sendReceiptWhatsApp = async () => {
     const optionsText = optionsList
       .map(({ option, quantity }) => `• ${option.name} × ${quantity}${option.unit === "kg" ? " kg" : ""} — ${(option.price * quantity).toLocaleString("fr-FR")} F`)
       .join("\n");
     const message = `🧾 *Reçu WashGo Niger*\n\n*N°* ${orderNumber}\n*Date :* ${orderDate}\n\n*Client :* ${order.clientName}\n*Tél :* ${order.clientPhone}\n\n*Service :* ${order.service.icon} ${order.service.name}\n${optionsText}\n\n*Lieu :* ${order.location === "domicile" ? "🏠 Domicile" : "🏪 Sur place"}\n*Paiement :* ${paymentLabels[order.payment] || order.payment}\n\n*TOTAL : ${order.total.toLocaleString("fr-FR")} FCFA*\n\n🎁 +10 points fidélité\nMerci pour votre confiance !`;
+
+    // Try native share with PDF file (mobile - opens WhatsApp with PDF attached)
+    try {
+      const blob = buildInvoicePDF().output("blob");
+      const file = new File([blob], `Facture-${orderNumber}.pdf`, { type: "application/pdf" });
+      const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
+      if (nav.canShare && nav.canShare({ files: [file] })) {
+        await nav.share({
+          files: [file],
+          title: `Reçu WashGo ${orderNumber}`,
+          text: message,
+        });
+        toast.success("Reçu partagé !");
+        return;
+      }
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return;
+    }
+
+    // Fallback: download PDF + open WhatsApp with text message
+    buildInvoicePDF().save(`Facture-${orderNumber}.pdf`);
     const phone = order.clientPhone.replace(/\D/g, "");
     const fullPhone = phone.startsWith("227") ? phone : `227${phone}`;
     window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, "_blank");
-    toast.success("Reçu envoyé par WhatsApp !");
+    toast.info("PDF téléchargé. Joignez-le manuellement dans WhatsApp.");
   };
+
 
   const uploadReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
