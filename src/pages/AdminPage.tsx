@@ -145,7 +145,7 @@ const sendOrderPDFWhatsApp = async (order: Order) => {
   const doc = generateOrderInvoicePDF(order);
   const orderNumber = order.orderNumber || order.id.slice(0, 8).toUpperCase();
   const blob = doc.output("blob");
-  const file = new File([blob], `Facture-${orderNumber}.pdf`, { type: "application/pdf" });
+  const file = new (window as any).File([blob], `Facture-${orderNumber}.pdf`, { type: "application/pdf" });
   const p = order.clientPhone.replace(/\D/g, "");
   const fullPhone = p.startsWith("227") ? p : `227${p}`;
   const message = `🧾 *Reçu WashGo Niger*\nN° ${orderNumber}\nClient: ${order.clientName}\nService: ${order.service.name}\nTotal: ${order.total.toLocaleString("fr-FR")} FCFA\n\nMerci pour votre confiance ! 🚗✨`;
