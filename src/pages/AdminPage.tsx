@@ -723,6 +723,9 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
                   <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-success border-success/20" onClick={() => openWhatsApp(order)}>
                     <MessageCircle className="w-3.5 h-3.5" />
                   </Button>
+                  <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-primary border-primary/20" onClick={() => { generateOrderInvoicePDF(order); toast.success("Reçu PDF téléchargé"); }} title="Télécharger reçu PDF">
+                    <FileText className="w-3.5 h-3.5" />
+                  </Button>
                   {order.status === "pending" && (
                     <Button variant="outline" size="sm" className="rounded-xl h-7 px-2 text-xs" onClick={() => updateOrderStatus(order.id, "cancelled")}>Refuser</Button>
                   )}
