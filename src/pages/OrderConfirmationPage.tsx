@@ -134,6 +134,17 @@ const OrderConfirmationPage = () => {
     toast.success("Facture PDF téléchargée !");
   };
 
+  const sendReceiptWhatsApp = () => {
+    const optionsText = optionsList
+      .map(({ option, quantity }) => `• ${option.name} × ${quantity}${option.unit === "kg" ? " kg" : ""} — ${(option.price * quantity).toLocaleString("fr-FR")} F`)
+      .join("\n");
+    const message = `🧾 *Reçu WashGo Niger*\n\n*N°* ${orderNumber}\n*Date :* ${orderDate}\n\n*Client :* ${order.clientName}\n*Tél :* ${order.clientPhone}\n\n*Service :* ${order.service.icon} ${order.service.name}\n${optionsText}\n\n*Lieu :* ${order.location === "domicile" ? "🏠 Domicile" : "🏪 Sur place"}\n*Paiement :* ${paymentLabels[order.payment] || order.payment}\n\n*TOTAL : ${order.total.toLocaleString("fr-FR")} FCFA*\n\n🎁 +10 points fidélité\nMerci pour votre confiance !`;
+    const phone = order.clientPhone.replace(/\D/g, "");
+    const fullPhone = phone.startsWith("227") ? phone : `227${phone}`;
+    window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, "_blank");
+    toast.success("Reçu envoyé par WhatsApp !");
+  };
+
   const uploadReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
