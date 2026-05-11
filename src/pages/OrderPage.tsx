@@ -7,7 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation, Tag, Loader2, Share2 } from "lucide-react";
+import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation, Tag, Loader2, Share2, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -32,6 +32,7 @@ const OrderPage = () => {
   const [promoInput, setPromoInput] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
+  const [whatsappFallback, setWhatsappFallback] = useState<{ text: string; phone: string } | null>(null);
 
   if (!service) return <div className="p-8 text-center text-muted-foreground">Service introuvable</div>;
 
@@ -138,7 +139,7 @@ const OrderPage = () => {
     );
   };
 
-  const openWhatsAppSafely = async (url: string, pendingWindow?: Window | null) => {
+  const openWhatsAppSafely = async (url: string, text: string, phone: string, pendingWindow?: Window | null) => {
     if (pendingWindow && !pendingWindow.closed) {
       pendingWindow.location.replace(url);
       pendingWindow.focus();
@@ -151,11 +152,18 @@ const OrderPage = () => {
       return true;
     }
 
+    // Bloqué — fallback
+    if (pendingWindow && !pendingWindow.closed) {
+      pendingWindow.close();
+    }
+
     try {
-      await navigator.clipboard.writeText(url);
-      toast.error("WhatsApp a été bloqué par le navigateur. Le lien a été copié.");
+      await navigator.clipboard.writeText(text);
+      setWhatsappFallback({ text, phone });
+      toast.info("WhatsApp bloqué. Le message a été copié.");
     } catch {
-      toast.error("Impossible d'ouvrir WhatsApp automatiquement.");
+      setWhatsappFallback({ text, phone });
+      toast.info("WhatsApp bloqué. Utilisez le fallback ci-dessous.");
     }
 
     return false;
@@ -222,7 +230,12 @@ const OrderPage = () => {
       `📍 ${locationText}\n💳 ${payLabel}` +
       `${mapLine}\n\n— Reçu envoyé au client —`;
     const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(adminMsg)}`;
-    await openWhatsAppSafely(whatsappUrl, pendingWhatsAppWindow);
+    const success = await openWhatsAppSafely(whatsappUrl, adminMsg, ADMIN_WHATSAPP, pendingWhatsAppWindow);
+
+    if (!success) {
+      // Fallback actif — ne pas naviguer, l'utilisateur verra le panneau fallback
+      return;
+    }
 
     toast.success("Commande envoyée ! 🎉");
     navigate("/order-confirmation", { state: { order } });
@@ -504,6 +517,72 @@ const OrderPage = () => {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Fallback WhatsApp bloqué */}
+      <AnimatePresence>
+        {whatsappFallback && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed inset-0 z-50 flex items-end justify-center pb-24 px-4 bg-black/40 backdrop-blur-sm"
+          >
+            <div className="bg-background rounded-2xl p-5 w-full max-w-sm shadow-2xl border border-border space-y-4">
+              <div className="text-center">
+                <div className="text-3xl mb-2">📱</div>
+                <h3 className="font-bold text-foreground">WhatsApp bloqué</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Votre navigateur a bloqué l'ouverture automatique.
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-muted/50 p-3 space-y-2 border border-border">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Numéro</span>
+                  <span className="text-sm font-bold text-foreground">+{whatsappFallback.phone}</span>
+                </div>
+                <textarea
+                  readOnly
+                  value={whatsappFallback.text}
+                  className="w-full bg-background rounded-lg p-2 text-[11px] text-foreground border border-border resize-none h-24"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  className="rounded-xl h-12"
+                  onClick={() => {
+                    navigator.clipboard.writeText(whatsappFallback.text);
+                    toast.success("Texte copié !");
+                  }}
+                >
+                  <Copy className="w-4 h-4 mr-1.5" />
+                  Copier le texte
+                </Button>
+                <Button
+                  className="rounded-xl h-12 bg-[#25D366] hover:bg-[#25D366]/90 text-white"
+                  onClick={() => {
+                    window.open(`https://wa.me/${whatsappFallback.phone}?text=${encodeURIComponent(whatsappFallback.text)}`, "_blank");
+                  }}
+                >
+                  <Phone className="w-4 h-4 mr-1.5" />
+                  Ouvrir WhatsApp
+                </Button>
+              </div>
+
+              <Button
+                variant="ghost"
+                className="w-full rounded-xl"
+                onClick={() => setWhatsappFallback(null)}
+              >
+                Fermer
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <BottomNav />
     </div>
   );
