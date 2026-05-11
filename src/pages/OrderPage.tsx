@@ -138,11 +138,36 @@ const OrderPage = () => {
     );
   };
 
+  const openWhatsAppSafely = async (url: string, pendingWindow?: Window | null) => {
+    if (pendingWindow && !pendingWindow.closed) {
+      pendingWindow.location.replace(url);
+      pendingWindow.focus();
+      return true;
+    }
+
+    const popup = window.open(url, "_blank", "noopener,noreferrer");
+    if (popup) {
+      popup.focus();
+      return true;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.error("WhatsApp a été bloqué par le navigateur. Le lien a été copié.");
+    } catch {
+      toast.error("Impossible d'ouvrir WhatsApp automatiquement.");
+    }
+
+    return false;
+  };
+
   const handleSubmit = async () => {
     if (selectedOptions.size === 0 || !name || !phone) {
       toast.error("Veuillez remplir tous les champs et choisir au moins une option");
       return;
     }
+
+    const pendingWhatsAppWindow = window.open("", "_blank", "noopener,noreferrer");
 
     const optionsArray = Array.from(selectedOptions.values());
     const firstOpt = optionsArray[0];
@@ -196,7 +221,8 @@ const OrderPage = () => {
       `💰 *Total: ${total.toLocaleString("fr-FR")} FCFA*\n` +
       `📍 ${locationText}\n💳 ${payLabel}` +
       `${mapLine}\n\n— Reçu envoyé au client —`;
-    window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(adminMsg)}`, "_blank");
+    const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(adminMsg)}`;
+    await openWhatsAppSafely(whatsappUrl, pendingWhatsAppWindow);
 
     toast.success("Commande envoyée ! 🎉");
     navigate("/order-confirmation", { state: { order } });
