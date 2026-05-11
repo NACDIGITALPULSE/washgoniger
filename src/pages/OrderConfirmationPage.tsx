@@ -17,6 +17,7 @@ const OrderConfirmationPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [receiptUploaded, setReceiptUploaded] = useState(false);
+  const [whatsappFallback, setWhatsappFallback] = useState<{ text: string; phone: string } | null>(null);
 
   if (!order) {
     navigate("/");
