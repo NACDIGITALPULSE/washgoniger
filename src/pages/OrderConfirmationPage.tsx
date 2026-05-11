@@ -374,6 +374,66 @@ const OrderConfirmationPage = () => {
           </Button>
         </div>
       </motion.div>
+
+      {/* Fallback WhatsApp bloqué */}
+      {whatsappFallback && (
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed bottom-20 left-4 right-4 z-50 bg-background rounded-2xl p-5 shadow-2xl border border-border space-y-4 max-w-sm mx-auto"
+        >
+          <div className="text-center">
+            <div className="text-3xl mb-2">📱</div>
+            <h3 className="font-bold text-foreground">WhatsApp bloqué</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Votre navigateur a bloqué l'ouverture automatique.
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-muted/50 p-3 space-y-2 border border-border">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Numéro</span>
+              <span className="text-sm font-bold text-foreground">+{whatsappFallback.phone}</span>
+            </div>
+            <textarea
+              readOnly
+              value={whatsappFallback.text}
+              className="w-full bg-background rounded-lg p-2 text-[11px] text-foreground border border-border resize-none h-24"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              className="rounded-xl h-11"
+              onClick={() => {
+                navigator.clipboard.writeText(whatsappFallback.text);
+                toast.success("Texte copié !");
+              }}
+            >
+              <Copy className="w-4 h-4 mr-1.5" />
+              Copier
+            </Button>
+            <Button
+              className="rounded-xl h-11 bg-[#25D366] hover:bg-[#25D366]/90 text-white"
+              onClick={() => {
+                window.open(`https://wa.me/${whatsappFallback.phone}?text=${encodeURIComponent(whatsappFallback.text)}`, "_blank");
+              }}
+            >
+              <Phone className="w-4 h-4 mr-1.5" />
+              WhatsApp
+            </Button>
+          </div>
+
+          <Button
+            variant="ghost"
+            className="w-full rounded-xl"
+            onClick={() => setWhatsappFallback(null)}
+          >
+            Fermer
+          </Button>
+        </motion.div>
+      )}
     </div>
   );
 };
