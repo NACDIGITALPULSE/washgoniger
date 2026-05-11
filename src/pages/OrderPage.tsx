@@ -139,7 +139,7 @@ const OrderPage = () => {
     );
   };
 
-  const openWhatsAppSafely = async (url: string, pendingWindow?: Window | null) => {
+  const openWhatsAppSafely = async (url: string, text: string, phone: string, pendingWindow?: Window | null) => {
     if (pendingWindow && !pendingWindow.closed) {
       pendingWindow.location.replace(url);
       pendingWindow.focus();
@@ -152,11 +152,18 @@ const OrderPage = () => {
       return true;
     }
 
+    // Bloqué — fallback
+    if (pendingWindow && !pendingWindow.closed) {
+      pendingWindow.close();
+    }
+
     try {
-      await navigator.clipboard.writeText(url);
-      toast.error("WhatsApp a été bloqué par le navigateur. Le lien a été copié.");
+      await navigator.clipboard.writeText(text);
+      setWhatsappFallback({ text, phone });
+      toast.info("WhatsApp bloqué. Le message a été copié.");
     } catch {
-      toast.error("Impossible d'ouvrir WhatsApp automatiquement.");
+      setWhatsappFallback({ text, phone });
+      toast.info("WhatsApp bloqué. Utilisez le fallback ci-dessous.");
     }
 
     return false;
@@ -223,7 +230,12 @@ const OrderPage = () => {
       `📍 ${locationText}\n💳 ${payLabel}` +
       `${mapLine}\n\n— Reçu envoyé au client —`;
     const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(adminMsg)}`;
-    await openWhatsAppSafely(whatsappUrl, pendingWhatsAppWindow);
+    const success = await openWhatsAppSafely(whatsappUrl, adminMsg, ADMIN_WHATSAPP, pendingWhatsAppWindow);
+
+    if (!success) {
+      // Fallback actif — ne pas naviguer, l'utilisateur verra le panneau fallback
+      return;
+    }
 
     toast.success("Commande envoyée ! 🎉");
     navigate("/order-confirmation", { state: { order } });

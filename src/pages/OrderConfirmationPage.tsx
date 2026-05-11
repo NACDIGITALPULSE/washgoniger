@@ -167,7 +167,19 @@ const OrderConfirmationPage = () => {
     buildInvoicePDF().save(`Facture-${orderNumber}.pdf`);
     const phone = order.clientPhone.replace(/\D/g, "");
     const fullPhone = phone.startsWith("227") ? phone : `227${phone}`;
-    window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`, "_blank");
+    const url = `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
+    const popup = window.open(url, "_blank");
+    if (!popup) {
+      try {
+        await navigator.clipboard.writeText(message);
+        setWhatsappFallback({ text: message, phone: fullPhone });
+        toast.info("WhatsApp bloqué. Le message a été copié.");
+      } catch {
+        setWhatsappFallback({ text: message, phone: fullPhone });
+        toast.info("WhatsApp bloqué. Utilisez le fallback ci-dessous.");
+      }
+      return;
+    }
     toast.info("PDF téléchargé. Joignez-le manuellement dans WhatsApp.");
   };
 
