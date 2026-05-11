@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle2, Home, ClipboardList, Navigation, Download, Upload, FileCheck, Send } from "lucide-react";
+import { CheckCircle2, Home, ClipboardList, Navigation, Download, Upload, FileCheck, Send, Copy, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Order } from "@/lib/services";
 import { toast } from "sonner";
