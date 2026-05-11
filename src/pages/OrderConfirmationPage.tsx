@@ -341,14 +341,6 @@ const OrderConfirmationPage = () => {
           </>
         )}
 
-        {/* Cash receipt download */}
-        {order.payment === "cash" && (
-          <Button onClick={downloadInvoicePDF} variant="outline" className="w-full rounded-2xl h-12 border-success/30 text-success">
-            <Download className="w-4 h-4 mr-1.5" />
-            Télécharger le reçu Cash
-          </Button>
-        )}
-
         {order.location === "domicile" && (
           <Button
             variant="outline"
