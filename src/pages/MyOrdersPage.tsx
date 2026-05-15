@@ -140,7 +140,7 @@ const MyOrdersPage = () => {
                 className="pl-10 rounded-xl"
               />
             </div>
-            <Button variant="hero" className="rounded-xl" onClick={handleSearch}>
+            <Button variant="hero" className="rounded-xl" onClick={handleSearch} aria-label="Rechercher">
               <Search className="w-4 h-4" />
             </Button>
           </div>

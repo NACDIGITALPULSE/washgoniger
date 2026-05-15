@@ -325,6 +325,7 @@ const OrderPage = () => {
                         <div className="rounded-xl p-3 flex items-center justify-between ml-9 bg-muted/40 border border-border">
                           <button
                             onClick={(e) => { e.stopPropagation(); updateQty(opt.id, -1); }}
+                            aria-label="Diminuer la quantité"
                             className="w-9 h-9 rounded-lg bg-background flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-colors border border-border"
                           >
                             <Minus className="w-4 h-4" />
@@ -337,6 +338,7 @@ const OrderPage = () => {
                           </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); updateQty(opt.id, 1); }}
+                            aria-label="Augmenter la quantité"
                             className="w-9 h-9 rounded-lg bg-background flex items-center justify-center text-foreground hover:bg-primary hover:text-primary-foreground transition-colors border border-border"
                           >
                             <Plus className="w-4 h-4" />

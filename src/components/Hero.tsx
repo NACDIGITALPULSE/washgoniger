@@ -39,6 +39,7 @@ const Hero = () => {
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={toggleTheme}
+                aria-label="Changer le thème"
                 className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center border border-border"
               >
                 {theme === "dark" ? <Sun className="w-4 h-4 text-primary" /> : <Moon className="w-4 h-4 text-foreground" />}
@@ -46,6 +47,7 @@ const Hero = () => {
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => navigate("/notifications")}
+                aria-label="Voir les notifications"
                 className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center border border-border relative"
               >
                 <Bell className="w-4 h-4 text-foreground" />
@@ -65,8 +67,8 @@ const Hero = () => {
             transition={{ delay: 0.05 }}
             className="mb-5"
           >
-            <h1 className="text-3xl font-extrabold text-foreground tracking-tight leading-none">
-              WashGo <span className="text-primary">Niger</span>
+            <h1 className="text-3xl font-extrabold text-foreground tracking-tight leading-tight">
+              WashGo <span className="text-primary">Niger</span> — Services de lavage auto & pressing à Niamey
             </h1>
             <p className="text-base font-semibold text-muted-foreground mt-1">Lavage · Vidange · Pressing</p>
           </motion.div>
