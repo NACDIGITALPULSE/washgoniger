@@ -1,0 +1,14 @@
+# WashGo Niger
+
+> Service de lavage auto, vidange et pressing à domicile ou sur place à Niamey, Niger. Commande rapide via une PWA mobile-first, paiement Cash, Nita ou Amanata.
+
+## Pages
+- [Accueil](/): Présentation des services, points forts et accès rapide aux catégories
+- [Services Auto](/services/auto): Catalogue des prestations auto (lavage, vidange, etc.)
+- [Services Pressing](/services/pressing): Lavage et repassage de vêtements et linge
+- [Mes commandes](/my-orders): Historique et suivi des commandes par numéro de téléphone
+- [Suivi de commande](/tracking): Timeline de progression d'une commande en cours
+- [Notifications](/notifications): Alertes temps réel sur les commandes
+
+## Optional
+- Contact WhatsApp: +227 88 08 29 87

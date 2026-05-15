@@ -9,12 +9,13 @@ const PageHeader = ({ title, subtitle }: { title: string; subtitle?: string }) =
       <div className="container max-w-lg mx-auto flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
+          aria-label="Retour"
           className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors text-foreground"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h2 className="font-bold text-foreground">{title}</h2>
+          <h1 className="font-bold text-foreground text-base">{title}</h1>
           {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
         </div>
       </div>
