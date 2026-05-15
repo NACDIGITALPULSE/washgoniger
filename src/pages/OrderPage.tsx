@@ -271,7 +271,7 @@ const OrderPage = () => {
       <div className="container max-w-lg mx-auto px-5 -mt-4 relative z-10 space-y-5">
         {/* Options */}
         <section className="glass-card rounded-2xl p-5">
-          <h3 className="font-bold text-foreground mb-1 text-sm flex items-center gap-2">
+          <h2 className="font-bold text-foreground mb-1 text-sm flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-primary" /> Choisir vos options
           </h3>
           <p className="text-[11px] text-muted-foreground mb-4">Sélectionnez une ou plusieurs options</p>
@@ -360,7 +360,7 @@ const OrderPage = () => {
 
         {/* Location */}
         <section className="glass-card rounded-2xl p-5">
-          <h3 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
+          <h2 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary" /> Lieu d'intervention
           </h3>
           <div className="grid grid-cols-2 gap-3">
@@ -409,7 +409,7 @@ const OrderPage = () => {
 
         {/* Payment */}
         <section className="glass-card rounded-2xl p-5">
-          <h3 className="font-bold text-foreground mb-2 text-sm flex items-center gap-2">
+          <h2 className="font-bold text-foreground mb-2 text-sm flex items-center gap-2">
             💳 Mode de paiement
           </h3>
           <p className="text-[11px] text-muted-foreground mb-3">
@@ -434,7 +434,7 @@ const OrderPage = () => {
 
         {/* Client info */}
         <section className="glass-card rounded-2xl p-5">
-          <h3 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
+          <h2 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
             <User className="w-4 h-4 text-primary" /> Vos informations
           </h3>
           <div className="space-y-3">
@@ -451,7 +451,7 @@ const OrderPage = () => {
 
         {/* Promo Code */}
         <section className="glass-card rounded-2xl p-5">
-          <h3 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
+          <h2 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
             <Tag className="w-4 h-4 text-primary" /> Code promo
           </h3>
           {appliedPromo ? (
