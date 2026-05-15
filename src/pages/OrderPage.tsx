@@ -273,7 +273,7 @@ const OrderPage = () => {
         <section className="glass-card rounded-2xl p-5">
           <h2 className="font-bold text-foreground mb-1 text-sm flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-primary" /> Choisir vos options
-          </h3>
+          </h2>
           <p className="text-[11px] text-muted-foreground mb-4">Sélectionnez une ou plusieurs options</p>
           <div className="space-y-2.5">
             {service.options.map((opt) => {
@@ -362,7 +362,7 @@ const OrderPage = () => {
         <section className="glass-card rounded-2xl p-5">
           <h2 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary" /> Lieu d'intervention
-          </h3>
+          </h2>
           <div className="grid grid-cols-2 gap-3">
             {(["sur_place", "domicile"] as const).map((loc) => (
               <button
@@ -411,7 +411,7 @@ const OrderPage = () => {
         <section className="glass-card rounded-2xl p-5">
           <h2 className="font-bold text-foreground mb-2 text-sm flex items-center gap-2">
             💳 Mode de paiement
-          </h3>
+          </h2>
           <p className="text-[11px] text-muted-foreground mb-3">
             Nita & Amanata via le <span className="font-bold text-primary">+227 88 08 29 87</span>
           </p>
@@ -436,7 +436,7 @@ const OrderPage = () => {
         <section className="glass-card rounded-2xl p-5">
           <h2 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
             <User className="w-4 h-4 text-primary" /> Vos informations
-          </h3>
+          </h2>
           <div className="space-y-3">
             <div className="relative">
               <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
@@ -453,7 +453,7 @@ const OrderPage = () => {
         <section className="glass-card rounded-2xl p-5">
           <h2 className="font-bold text-foreground mb-3 text-sm flex items-center gap-2">
             <Tag className="w-4 h-4 text-primary" /> Code promo
-          </h3>
+          </h2>
           {appliedPromo ? (
             <div className="rounded-xl p-3 flex items-center justify-between bg-success/10 border border-success/20">
               <div className="flex items-center gap-2">
