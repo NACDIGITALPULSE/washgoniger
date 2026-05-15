@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import SEO from "@/components/SEO";
 import { motion } from "framer-motion";
 import { Search, Phone, MapPin, Clock, CheckCircle2, Truck, Package, XCircle, PackageCheck, Home } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -102,6 +103,11 @@ const TrackingPage = () => {
 
   return (
     <div className="min-h-screen pb-20 bg-background">
+      <SEO
+        title="Suivi de commande — WashGo Niger"
+        description="Suivez en temps réel l'avancement de votre commande WashGo Niger à Niamey."
+        path="/tracking"
+      />
       <PageHeader title="📍 Suivi de commande" />
       <div className="container max-w-lg mx-auto px-4 py-6">
         {/* Search */}

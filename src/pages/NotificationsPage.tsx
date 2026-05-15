@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import SEO from "@/components/SEO";
 import { motion } from "framer-motion";
 import { Bell, Package, CheckCircle2, Clock, Truck, PackageCheck, Home, XCircle } from "lucide-react";
 
@@ -70,6 +71,11 @@ const NotificationsPage = () => {
 
   return (
     <div className="min-h-screen pb-20 bg-background">
+      <SEO
+        title="Notifications — WashGo Niger"
+        description="Recevez en temps réel les mises à jour de vos commandes WashGo Niger."
+        path="/notifications"
+      />
       <PageHeader title="🔔 Notifications" />
       <div className="container max-w-lg mx-auto px-4 py-6">
         {!savedPhone ? (
