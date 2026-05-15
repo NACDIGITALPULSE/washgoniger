@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import SEO from "@/components/SEO";
 import { motion, AnimatePresence } from "framer-motion";
 import { Package, Scale, Phone, Search, Bell, Edit3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -124,6 +125,11 @@ const MyOrdersPage = () => {
 
   return (
     <div className="min-h-screen pb-20 bg-background">
+      <SEO
+        title="Mes commandes — WashGo Niger"
+        description="Retrouvez et suivez l'historique de vos commandes WashGo Niger avec votre numéro de téléphone."
+        path="/my-orders"
+      />
       <PageHeader title="📋 Mes Commandes" />
       <div className="container max-w-lg mx-auto px-4 py-6">
         {/* Phone search */}
