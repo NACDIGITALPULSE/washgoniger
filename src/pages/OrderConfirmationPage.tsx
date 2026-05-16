@@ -6,7 +6,7 @@ import { Order } from "@/lib/services";
 import { toast } from "sonner";
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import jsPDF from "jspdf";
+import { buildReceiptPDF, downloadReceiptPDF } from "@/lib/receipt-pdf";
 
 const ADMIN_WHATSAPP = "22788082987";
 
