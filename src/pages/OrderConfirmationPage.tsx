@@ -331,6 +331,14 @@ const OrderConfirmationPage = () => {
           </div>
 
           <Button
+            variant="outline"
+            className="w-full rounded-xl h-11 border-primary/30 text-primary hover:bg-primary/5"
+            onClick={downloadInvoicePDF}
+          >
+            <Download className="w-4 h-4 mr-1.5" />
+            Télécharger le reçu PDF
+          </Button>
+          <Button
             variant="ghost"
             className="w-full rounded-xl"
             onClick={() => setWhatsappFallback(null)}
