@@ -33,7 +33,7 @@ const OrderPage = () => {
   const [promoInput, setPromoInput] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
-  const [whatsappFallback, setWhatsappFallback] = useState<{ text: string; phone: string } | null>(null);
+  const [whatsappFallback, setWhatsappFallback] = useState<{ text: string; phone: string; order?: Order } | null>(null);
 
   if (!service) return <div className="p-8 text-center text-muted-foreground">Service introuvable</div>;
 
