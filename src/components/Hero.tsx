@@ -31,8 +31,9 @@ const Hero = () => {
               <motion.img
                 src={logo}
                 alt="WashGo Niger"
-                className="w-20 h-20 object-contain drop-shadow-xl mix-blend-multiply dark:mix-blend-screen"
-                whileHover={{ rotate: [0, -5, 5, 0] }}
+                className="w-24 h-24 object-contain drop-shadow-2xl mix-blend-multiply dark:mix-blend-screen premium-glow rounded-2xl"
+                whileHover={{ rotate: [0, -5, 5, 0], scale: 1.05 }}
+                transition={{ duration: 0.5 }}
               />
             </div>
             <div className="flex items-center gap-2">
