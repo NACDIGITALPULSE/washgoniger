@@ -574,6 +574,20 @@ const OrderPage = () => {
                 </Button>
               </div>
 
+              {whatsappFallback.order && (
+                <Button
+                  variant="outline"
+                  className="w-full rounded-xl h-12 border-primary/30 text-primary hover:bg-primary/5"
+                  onClick={() => {
+                    downloadReceiptPDF(whatsappFallback.order!);
+                    toast.success("Reçu PDF téléchargé — joignez-le dans WhatsApp");
+                  }}
+                >
+                  <Download className="w-4 h-4 mr-1.5" />
+                  Télécharger le reçu PDF
+                </Button>
+              )}
+
               <Button
                 variant="ghost"
                 className="w-full rounded-xl"
