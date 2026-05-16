@@ -140,7 +140,7 @@ const OrderPage = () => {
     );
   };
 
-  const openWhatsAppSafely = async (url: string, text: string, phone: string, pendingWindow?: Window | null) => {
+  const openWhatsAppSafely = async (url: string, text: string, phone: string, pendingWindow?: Window | null, order?: Order) => {
     if (pendingWindow && !pendingWindow.closed) {
       pendingWindow.location.replace(url);
       pendingWindow.focus();
@@ -160,10 +160,10 @@ const OrderPage = () => {
 
     try {
       await navigator.clipboard.writeText(text);
-      setWhatsappFallback({ text, phone });
+      setWhatsappFallback({ text, phone, order });
       toast.info("WhatsApp bloqué. Le message a été copié.");
     } catch {
-      setWhatsappFallback({ text, phone });
+      setWhatsappFallback({ text, phone, order });
       toast.info("WhatsApp bloqué. Utilisez le fallback ci-dessous.");
     }
 
