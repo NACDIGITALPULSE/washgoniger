@@ -7,9 +7,10 @@ import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation, Tag, Loader2, Share2, Copy } from "lucide-react";
+import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation, Tag, Loader2, Share2, Copy, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { downloadReceiptPDF } from "@/lib/receipt-pdf";
 
 const ADMIN_WHATSAPP = "22788082987";
 
@@ -32,7 +33,7 @@ const OrderPage = () => {
   const [promoInput, setPromoInput] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
-  const [whatsappFallback, setWhatsappFallback] = useState<{ text: string; phone: string } | null>(null);
+  const [whatsappFallback, setWhatsappFallback] = useState<{ text: string; phone: string; order?: Order } | null>(null);
 
   if (!service) return <div className="p-8 text-center text-muted-foreground">Service introuvable</div>;
 
@@ -139,7 +140,7 @@ const OrderPage = () => {
     );
   };
 
-  const openWhatsAppSafely = async (url: string, text: string, phone: string, pendingWindow?: Window | null) => {
+  const openWhatsAppSafely = async (url: string, text: string, phone: string, pendingWindow?: Window | null, order?: Order) => {
     if (pendingWindow && !pendingWindow.closed) {
       pendingWindow.location.replace(url);
       pendingWindow.focus();
@@ -159,10 +160,10 @@ const OrderPage = () => {
 
     try {
       await navigator.clipboard.writeText(text);
-      setWhatsappFallback({ text, phone });
+      setWhatsappFallback({ text, phone, order });
       toast.info("WhatsApp bloqué. Le message a été copié.");
     } catch {
-      setWhatsappFallback({ text, phone });
+      setWhatsappFallback({ text, phone, order });
       toast.info("WhatsApp bloqué. Utilisez le fallback ci-dessous.");
     }
 
@@ -230,7 +231,7 @@ const OrderPage = () => {
       `📍 ${locationText}\n💳 ${payLabel}` +
       `${mapLine}\n\n— Reçu envoyé au client —`;
     const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(adminMsg)}`;
-    const success = await openWhatsAppSafely(whatsappUrl, adminMsg, ADMIN_WHATSAPP, pendingWhatsAppWindow);
+    const success = await openWhatsAppSafely(whatsappUrl, adminMsg, ADMIN_WHATSAPP, pendingWhatsAppWindow, order);
 
     if (!success) {
       // Fallback actif — ne pas naviguer, l'utilisateur verra le panneau fallback
@@ -572,6 +573,20 @@ const OrderPage = () => {
                   Ouvrir WhatsApp
                 </Button>
               </div>
+
+              {whatsappFallback.order && (
+                <Button
+                  variant="outline"
+                  className="w-full rounded-xl h-12 border-primary/30 text-primary hover:bg-primary/5"
+                  onClick={() => {
+                    downloadReceiptPDF(whatsappFallback.order!);
+                    toast.success("Reçu PDF téléchargé — joignez-le dans WhatsApp");
+                  }}
+                >
+                  <Download className="w-4 h-4 mr-1.5" />
+                  Télécharger le reçu PDF
+                </Button>
+              )}
 
               <Button
                 variant="ghost"
