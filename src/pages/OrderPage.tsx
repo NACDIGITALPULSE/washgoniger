@@ -7,9 +7,10 @@ import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation, Tag, Loader2, Share2, Copy } from "lucide-react";
+import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation, Tag, Loader2, Share2, Copy, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { downloadReceiptPDF } from "@/lib/receipt-pdf";
 
 const ADMIN_WHATSAPP = "22788082987";
 
