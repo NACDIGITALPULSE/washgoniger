@@ -1,35 +1,52 @@
-## Plan — 3 améliorations
 
-### 1. Lien de téléchargement PDF dans le fallback WhatsApp
-Quand l'ouverture auto de WhatsApp échoue, l'utilisateur voit déjà un panneau avec le numéro et un bouton "Copier le texte". J'ajoute un bouton **« Télécharger le reçu PDF »** directement dans ce panneau, pour qu'il puisse le joindre manuellement à la conversation WhatsApp.
+# Plan — 3 améliorations UX premium
 
-- Fichier `src/pages/OrderConfirmationPage.tsx` : le PDF est déjà généré (`generateReceiptPDF`). Ajout d'un bouton dans l'overlay fallback qui appelle la fonction de téléchargement existante.
-- Fichier `src/pages/OrderPage.tsx` : génération du PDF du reçu juste après création de la commande (nouvelle commande → on a déjà l'ID), stockage du blob URL dans l'état `whatsappFallback`, et bouton « Télécharger le reçu » dans le panneau fallback.
+## 1. Écran de confirmation iOS glass (`OrderConfirmationPage.tsx`)
 
-### 2. Nouveau thème premium aux couleurs du logo
-Direction : palette inspirée du logo WashGo (bleu profond + vert clean + blanc), version premium « tech raffiné ».
+Refonte visuelle en glassmorphism cohérent avec le Hero :
+- **Header succès** : icône check animée dans un cercle gradient (primary→secondary), titre "Commande confirmée" en `font-extrabold tracking-tight`, n° commande WG-XXX en chip glass.
+- **Carte ETA glass** : `glass-card` avec icône `Clock`, temps estimé en gros (ex. "≈ 35 min"), label "Arrivée prévue" + heure calculée.
+- **Carte récap clair** : service, options sélectionnées, adresse, mode paiement — chaque ligne avec icône + valeur à droite, séparateurs `border-border/40`.
+- **Carte total** : montant FCFA en `text-3xl font-bold`, badge promo si applicable.
+- **Boutons d'action sticky bas** :
+  - Bouton principal **"Télécharger le reçu PDF"** (toujours visible, pas seulement dans le fallback) — gradient primary, icône `Download`.
+  - Bouton secondaire "Partager sur WhatsApp" (ouvre wa.me avec lien PDF).
+  - Lien tertiaire "Suivre ma commande".
 
-**Tokens HSL (`src/index.css` + `tailwind.config.ts`)** :
-- `--background` : `220 30% 98%` (clair) / `222 47% 8%` (sombre)
-- `--foreground` : `222 47% 11%` / `210 20% 98%`
-- `--primary` (bleu logo profond) : `215 85% 32%`
-- `--primary-glow` : `210 95% 55%`
-- `--secondary` (vert clean logo) : `158 64% 42%`
-- `--accent` (or doux pour touches premium) : `38 92% 58%`
-- `--card` glassmorphism : `0 0% 100% / 0.7` avec `backdrop-blur-xl`
-- Gradients : `--gradient-primary: linear-gradient(135deg, hsl(215 85% 32%), hsl(210 95% 55%))`, `--gradient-hero`, `--gradient-shine` (effet brillance)
-- Shadows premium : `--shadow-elegant: 0 20px 60px -15px hsl(215 85% 32% / 0.35)`, `--shadow-glow`
+## 2. Estimation de prix en temps réel sur l'accueil
 
-**Typographie** : Space Grotesk (titres) + DM Sans (corps) via `@fontsource/space-grotesk` et `@fontsource/dm-sans`, import dans `src/main.tsx`, mapping dans `tailwind.config.ts` (`font-display`, `font-sans`).
+Nouveau composant `LivePriceEstimator` affiché sous les 2 grandes cartes CTA du Hero :
+- **Sélecteur de service** : tabs glass "Auto" / "Pressing".
+- **Si Auto** : chips de sélection type véhicule (Petite voiture, Berline, SUV, Utilitaire) → chaque type a un multiplicateur de prix.
+- **Si Pressing** : chips type vêtement (Chemise, Pantalon, Costume, Robe, Veste) + sélecteur quantité (−/+).
+- **Affichage live** : carte glass avec "Estimation" + montant FCFA mis à jour à chaque clic, animation `motion` sur le changement de prix.
+- **CTA** "Commander maintenant" qui pré-remplit la page commande avec les choix.
 
-**Composants impactés** : Hero (gradient mesh + halo lumineux subtil), boutons (variant `premium` avec gradient + shine au hover), cards (glass + bordure dégradée), header (bordure dorée fine en dark mode).
+Prix calculés côté front depuis une table de tarifs (`src/lib/pricing.ts`) — pas de modif backend.
 
-### 3. Logo agrandi (96px)
-- `src/components/PageHeader.tsx` (ou équivalent header) : taille logo passe de ~40-48px à **96px** (h-24), avec léger glow autour en utilisant `--shadow-glow`.
-- Ajustement du padding du header pour accommoder la nouvelle hauteur.
-- Vérification responsive : sur mobile, garder 96px mais réduire les éléments adjacents si besoin.
+## 3. Géolocalisation pour ETA personnalisé dans le bandeau livraison
 
-### Vérifications
-- Build TS sans erreur
-- Contrôle visuel light + dark mode
-- Test du flux : commande → blocage WhatsApp simulé → bouton PDF visible et fonctionnel
+- Hook `useGeoETA()` qui :
+  - Au montage, appelle `navigator.geolocation.getCurrentPosition()` avec timeout 5s.
+  - Calcule distance Haversine entre user et base WashGo (Niamey centre, coords en constante).
+  - Renvoie un ETA : `< 3km → 25 min`, `3–7km → 40 min`, `> 7km → 55 min`.
+  - Fallback si refus/erreur → "Moins de 45 minutes" (texte actuel).
+- Bandeau "Livraison garantie" affiche dynamiquement le texte personnalisé + un petit indicateur de zone (ex. "Zone Plateau · 25 min").
+- Gestion gracieuse : pas de blocage, pas de popup intrusive, ETA générique tant que la géoloc n'a pas répondu.
+
+## Détails techniques
+
+- **Fichiers modifiés** :
+  - `src/pages/OrderConfirmationPage.tsx` — refonte UI glass + bouton PDF permanent
+  - `src/components/Hero.tsx` — intégration du composant estimateur
+  - `src/components/LivePriceEstimator.tsx` (nouveau)
+  - `src/lib/pricing.ts` (nouveau) — table tarifs auto/pressing
+  - `src/hooks/useGeoETA.ts` (nouveau) — géoloc + calcul ETA
+- **Pas de migration DB**, pas de nouveau secret, pas d'edge function.
+- **Tokens sémantiques** uniquement (`primary`, `secondary`, `glass-card`, `muted`) — aucune couleur en dur.
+- **Animations** : `framer-motion` déjà installé, transitions douces sur changement de prix et apparition ETA.
+- **PDF reçu** : réutilise `src/lib/receipt-pdf.ts` existant.
+
+## Hors scope
+- Pas de changement de logique de paiement ni de schéma commande.
+- Pas de carte interactive (Mapbox) — juste calcul Haversine local.
