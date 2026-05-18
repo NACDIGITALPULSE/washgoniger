@@ -157,12 +157,15 @@ const Hero = () => {
           </motion.button>
         </div>
 
-        {/* Glass info banner */}
+        {/* Live price estimator */}
+        <LivePriceEstimator />
+
+        {/* Glass info banner with geo-aware ETA */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="mt-6 flex items-center justify-between p-4 rounded-3xl bg-muted/50 border border-border/60 backdrop-blur-md"
+          transition={{ delay: 0.28 }}
+          className="mt-5 flex items-center justify-between p-4 rounded-3xl bg-muted/50 border border-border/60 backdrop-blur-md"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -172,7 +175,14 @@ const Hero = () => {
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
                 Livraison garantie
               </p>
-              <p className="text-sm font-semibold text-foreground">Moins de 45 minutes</p>
+              <p className="text-sm font-semibold text-foreground">
+                {geo.loading ? "Calcul de votre délai…" : geo.label}
+              </p>
+              {geo.available && geo.distanceKm !== null && (
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Distance ≈ {geo.distanceKm.toFixed(1)} km
+                </p>
+              )}
             </div>
           </div>
           <div className="w-8 h-8 rounded-full bg-background flex items-center justify-center border border-border">
