@@ -3,12 +3,15 @@ import { ArrowRight, MapPin, Bell, Moon, Sun, Clock, ChevronRight, Car, Shirt } 
 import { useNavigate } from "react-router-dom";
 import { useAppState } from "@/lib/store";
 import { useTheme } from "@/hooks/use-theme";
+import { useGeoETA } from "@/hooks/useGeoETA";
+import LivePriceEstimator from "@/components/LivePriceEstimator";
 import logo from "@/assets/logo.png";
 
 const Hero = () => {
   const navigate = useNavigate();
   const { services } = useAppState();
   const { theme, toggleTheme } = useTheme();
+  const geo = useGeoETA();
 
   const autoServices = services.filter((s) => s.category === "auto");
   const pressingServices = services.filter((s) => s.category === "pressing");
