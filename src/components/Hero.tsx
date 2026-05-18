@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
-import { Car, Shirt, ArrowRight, MapPin, Star, Zap, Phone, Shield, Clock, Award, ChevronRight, Bell, Moon, Sun, Trophy, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight, MapPin, Bell, Moon, Sun, Clock, ChevronRight, Car, Shirt } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppState } from "@/lib/store";
 import { useTheme } from "@/hooks/use-theme";
@@ -15,196 +14,179 @@ const Hero = () => {
   const pressingServices = services.filter((s) => s.category === "pressing");
 
   return (
-    <section className="relative overflow-hidden bg-background min-h-screen">
-      <div className="relative overflow-hidden">
-        <div className="absolute -top-32 -right-32 w-80 h-80 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full bg-secondary/15 blur-3xl" />
+    <section className="relative bg-background min-h-screen">
+      {/* Ambient background blobs */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-32 -right-20 w-80 h-80 rounded-full bg-primary/15 blur-3xl" />
+        <div className="absolute top-40 -left-24 w-72 h-72 rounded-full bg-secondary/15 blur-3xl" />
+      </div>
 
-        <div className="relative container max-w-lg mx-auto px-5 pt-5 pb-8">
-          {/* Top bar - Logo enlarged, no small text */}
+      <div className="relative container max-w-lg mx-auto px-5 pt-6 pb-6">
+        {/* iOS-style Header */}
+        <motion.header
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between mb-7"
+        >
+          {/* Logo card */}
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-between mb-6"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-16 h-16 bg-card rounded-2xl shadow-sm border border-border/60 flex items-center justify-center overflow-hidden"
           >
-            <div className="flex items-center gap-3">
-              <motion.img
-                src={logo}
-                alt="WashGo Niger"
-                className="w-24 h-24 object-contain drop-shadow-2xl mix-blend-multiply dark:mix-blend-screen premium-glow rounded-2xl"
-                whileHover={{ rotate: [0, -5, 5, 0], scale: 1.05 }}
-                transition={{ duration: 0.5 }}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={toggleTheme}
-                aria-label="Changer le thème"
-                className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center border border-border"
-              >
-                {theme === "dark" ? <Sun className="w-4 h-4 text-primary" /> : <Moon className="w-4 h-4 text-foreground" />}
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => navigate("/notifications")}
-                aria-label="Voir les notifications"
-                className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center border border-border relative"
-              >
-                <Bell className="w-4 h-4 text-foreground" />
-                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary animate-pulse border-2 border-background" />
-              </motion.button>
-              <div className="flex items-center gap-1.5 rounded-xl bg-muted px-3 py-2 border border-border">
-                <MapPin className="w-3.5 h-3.5 text-primary" />
-                <span className="text-xs font-semibold text-foreground">Niamey</span>
-              </div>
-            </div>
+            <img
+              src={logo}
+              alt="WashGo Niger"
+              className="w-14 h-14 object-contain mix-blend-multiply dark:mix-blend-screen"
+            />
           </motion.div>
 
-          {/* Brand name - large and visible */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="mb-5"
-          >
-            <h1 className="text-3xl font-extrabold text-foreground tracking-tight leading-tight">
-              WashGo <span className="text-primary">Niger</span> — Services de lavage auto & pressing à Niamey
-            </h1>
-            <p className="text-base font-semibold text-muted-foreground mt-1">Lavage · Vidange · Pressing</p>
-          </motion.div>
+          {/* Right cluster */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-muted/70 backdrop-blur-md px-3 py-2 rounded-full border border-border/60 shadow-sm">
+              <MapPin className="w-3.5 h-3.5 text-secondary" />
+              <span className="text-[12px] font-semibold text-foreground">Niamey</span>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={toggleTheme}
+              aria-label="Changer le thème"
+              className="w-10 h-10 rounded-full bg-muted/70 backdrop-blur-md border border-border/60 shadow-sm flex items-center justify-center text-foreground"
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4 text-primary" /> : <Moon className="w-4 h-4" />}
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => navigate("/notifications")}
+              aria-label="Voir les notifications"
+              className="w-10 h-10 rounded-full bg-muted/70 backdrop-blur-md border border-border/60 shadow-sm flex items-center justify-center text-foreground relative"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-primary border-2 border-background" />
+            </motion.button>
+          </div>
+        </motion.header>
 
+        {/* Sculpted headline */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mb-7"
+        >
+          <h1 className="text-[34px] leading-[1.1] font-extrabold tracking-tight text-foreground">
+            Que lavons-nous
+            <br />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+              aujourd'hui&nbsp;?
+            </span>
+          </h1>
+          <p className="text-muted-foreground mt-2 font-medium text-[15px]">
+            Commandez votre service en 60s.
+          </p>
+        </motion.div>
 
-
-          {/* Hero card */}
-          <motion.div
+        {/* Hero CTA Cards */}
+        <div className="space-y-4">
+          {/* Auto */}
+          <motion.button
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="hero-gradient rounded-3xl p-6 mb-6 relative overflow-hidden shadow-2xl"
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate("/services/auto")}
+            className="group relative w-full overflow-hidden rounded-[32px] p-[1.5px] bg-gradient-to-br from-primary to-[hsl(215_85%_22%)] premium-shadow text-left"
           >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent_60%)]" />
-            <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary-foreground/10 blur-2xl" />
-            <div className="relative text-center">
-              <motion.div
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.2, type: "spring" }}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-foreground/20 backdrop-blur mb-3 border border-primary-foreground/30"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />
-                <span className="text-[10px] font-bold text-primary-foreground uppercase tracking-wider">Nouveau</span>
-              </motion.div>
-              <h2 className="text-primary-foreground font-extrabold text-2xl leading-tight mb-2">
-                Commandez en<br />moins de 60 secondes ⚡
-              </h2>
-              <p className="text-primary-foreground/80 text-sm mb-5 font-medium">
-                Lavage, vidange & pressing à domicile
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <motion.button
-                  whileHover={{ scale: 1.03, y: -2 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => navigate("/services/auto")}
-                  className="group relative overflow-hidden rounded-2xl bg-primary-foreground text-foreground p-4 shadow-xl hover:shadow-2xl transition-shadow"
-                >
-                  <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-primary/10 blur-xl group-hover:bg-primary/20 transition-colors" />
-                  <div className="relative flex flex-col items-start gap-2">
-                    <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-                      <Car className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="text-left">
-                      <div className="font-extrabold text-base leading-none">Auto</div>
-                      <div className="text-[10px] text-muted-foreground mt-1 font-medium">Lavage · Vidange</div>
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-primary mt-1">
-                      Démarrer <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.03, y: -2 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => navigate("/services/pressing")}
-                  className="group relative overflow-hidden rounded-2xl bg-primary-foreground text-foreground p-4 shadow-xl hover:shadow-2xl transition-shadow"
-                >
-                  <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-secondary/10 blur-xl group-hover:bg-secondary/20 transition-colors" />
-                  <div className="relative flex flex-col items-start gap-2">
-                    <div className="w-10 h-10 rounded-xl bg-secondary/15 flex items-center justify-center">
-                      <Shirt className="w-5 h-5 text-secondary" />
-                    </div>
-                    <div className="text-left">
-                      <div className="font-extrabold text-base leading-none">Pressing</div>
-                      <div className="text-[10px] text-muted-foreground mt-1 font-medium">Lavage · Repassage</div>
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-secondary mt-1">
-                      Démarrer <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-                </motion.button>
-              </div>
-              <div className="flex items-center justify-center gap-1.5 mt-4 text-primary-foreground/80">
-                <Clock className="w-3 h-3" />
-                <span className="text-[10px] font-semibold">Livraison en 30 min · Paiement sécurisé</span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Stats row */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-            className="grid grid-cols-3 gap-3 mb-6"
-          >
-            {[
-              { icon: Star, value: "4.8", label: "Avis", color: "text-warning" },
-              { icon: Zap, value: "30min", label: "Délai", color: "text-primary" },
-              { icon: Phone, value: "500+", label: "Clients", color: "text-secondary" },
-            ].map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + i * 0.08 }}
-                className="glass-card rounded-2xl p-3 text-center"
-              >
-                <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center mx-auto mb-1.5">
-                  <stat.icon className={`w-4 h-4 ${stat.color}`} />
+            <div className="relative rounded-[30px] p-6 bg-gradient-to-br from-primary to-[hsl(215_85%_22%)]">
+              <div className="flex justify-between items-start">
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/20">
+                  <Car className="w-7 h-7 text-white" />
                 </div>
-                <div className="text-base font-bold text-foreground leading-none">{stat.value}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">{stat.label}</div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </div>
+                <span className="px-3 py-1 bg-accent text-accent-foreground text-[10px] font-black uppercase tracking-wider rounded-full shadow-lg">
+                  Expert
+                </span>
+              </div>
 
-      {/* Trust badges */}
-      <div className="container max-w-lg mx-auto px-5 -mt-2 mb-5">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="flex gap-2 justify-center flex-wrap">
-          {[
-            { icon: Shield, text: "Paiement sécurisé" },
-            { icon: Clock, text: "Service rapide" },
-            { icon: Award, text: "Qualité garantie" },
-          ].map((badge) => (
-            <div key={badge.text} className="flex items-center gap-1.5 bg-muted rounded-full px-3 py-1.5 border border-border">
-              <badge.icon className="w-3 h-3 text-primary" />
-              <span className="text-[10px] font-semibold text-foreground">{badge.text}</span>
+              <div className="mt-10">
+                <h2 className="text-2xl font-bold text-white tracking-tight">Lavage Auto</h2>
+                <p className="text-white/70 text-sm mt-1">Nettoyage complet & vidange express</p>
+                <div className="mt-5 flex items-center gap-2">
+                  <span className="text-white font-bold text-[15px]">Démarrer</span>
+                  <ArrowRight className="w-5 h-5 text-white transition-transform group-hover:translate-x-1" />
+                </div>
+              </div>
+
+              <div className="absolute -bottom-10 -right-10 w-36 h-36 bg-white/10 rounded-full blur-2xl" />
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[hsl(210_95%_55%/0.4)] rounded-full blur-2xl" />
             </div>
-          ))}
+          </motion.button>
+
+          {/* Pressing */}
+          <motion.button
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.16 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate("/services/pressing")}
+            className="group relative w-full overflow-hidden rounded-[32px] p-[1.5px] bg-gradient-to-br from-secondary to-[hsl(170_70%_28%)] premium-shadow text-left"
+          >
+            <div className="relative rounded-[30px] p-6 bg-gradient-to-br from-secondary to-[hsl(170_70%_28%)]">
+              <div className="flex justify-between items-start">
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/20">
+                  <Shirt className="w-7 h-7 text-white" />
+                </div>
+                <span className="px-3 py-1 bg-white/20 text-white text-[10px] font-bold rounded-full backdrop-blur">
+                  24h Express
+                </span>
+              </div>
+
+              <div className="mt-10">
+                <h2 className="text-2xl font-bold text-white tracking-tight">Pressing</h2>
+                <p className="text-white/80 text-sm mt-1">Soin du textile & repassage pro</p>
+                <div className="mt-5 flex items-center gap-2">
+                  <span className="text-white font-bold text-[15px]">Démarrer</span>
+                  <ArrowRight className="w-5 h-5 text-white transition-transform group-hover:translate-x-1" />
+                </div>
+              </div>
+
+              <div className="absolute -bottom-10 -right-10 w-36 h-36 bg-white/10 rounded-full blur-2xl" />
+            </div>
+          </motion.button>
+        </div>
+
+        {/* Glass info banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="mt-6 flex items-center justify-between p-4 rounded-3xl bg-muted/50 border border-border/60 backdrop-blur-md"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                Livraison garantie
+              </p>
+              <p className="text-sm font-semibold text-foreground">Moins de 45 minutes</p>
+            </div>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-background flex items-center justify-center border border-border">
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </div>
         </motion.div>
       </div>
 
-      {/* Services */}
-      <div className="container max-w-lg mx-auto px-5 space-y-6 pb-6">
+      {/* Services sections */}
+      <div className="relative container max-w-lg mx-auto px-5 space-y-6 pb-8">
         <ServiceSection
           title="Services Auto"
           emoji="🚗"
           services={autoServices}
           onSeeAll={() => navigate("/services/auto")}
           onServiceClick={(id) => navigate(`/order/${id}`)}
-          delay={0.45}
+          delay={0.3}
         />
         <ServiceSection
           title="Pressing"
@@ -212,64 +194,8 @@ const Hero = () => {
           services={pressingServices}
           onSeeAll={() => navigate("/services/pressing")}
           onServiceClick={(id) => navigate(`/order/${id}`)}
-          delay={0.55}
+          delay={0.4}
         />
-
-        {/* Promo banner */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.7 }}
-          className="rounded-3xl p-5 relative overflow-hidden bg-secondary"
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.1),transparent_60%)]" />
-          <div className="relative flex items-center gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Trophy className="w-4 h-4 text-secondary-foreground/80" />
-                <span className="text-[10px] font-bold text-secondary-foreground/70 uppercase tracking-wider">Fidélité</span>
-              </div>
-              <p className="text-secondary-foreground font-bold text-base leading-snug">
-                Échangez vos points contre des cadeaux !
-              </p>
-              <p className="text-secondary-foreground/60 text-xs mt-1">50 pts = 500 F • 200 pts = Service gratuit</p>
-            </div>
-            <div className="text-4xl">🏆</div>
-          </div>
-        </motion.div>
-
-        {/* How it works */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
-          <h2 className="font-bold text-foreground text-base mb-3 flex items-center gap-2">
-            <span className="w-8 h-8 rounded-xl hero-gradient flex items-center justify-center text-sm">📋</span>
-            Comment ça marche ?
-          </h2>
-          <div className="space-y-2.5">
-            {[
-              { step: "1", title: "Choisissez", desc: "Sélectionnez vos services et options", emoji: "👆" },
-              { step: "2", title: "Commandez", desc: "Remplissez vos infos et confirmez", emoji: "📝" },
-              { step: "3", title: "Suivez", desc: "Trackez votre commande en temps réel", emoji: "📍" },
-              { step: "4", title: "Profitez", desc: "Récupérez votre véhicule impeccable", emoji: "✅" },
-            ].map((item, i) => (
-              <motion.div
-                key={item.step}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.85 + i * 0.1 }}
-                className="glass-card rounded-2xl p-4 flex items-center gap-3"
-              >
-                <div className="w-11 h-11 rounded-xl hero-gradient flex items-center justify-center text-lg shrink-0">
-                  {item.emoji}
-                </div>
-                <div className="flex-1">
-                  <div className="font-bold text-foreground text-sm">{item.title}</div>
-                  <div className="text-xs text-muted-foreground">{item.desc}</div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
       </div>
     </section>
   );
