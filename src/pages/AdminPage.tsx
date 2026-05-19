@@ -846,6 +846,60 @@ const OrdersTab = ({ orders, updateOrderStatus, agents, assignAgent }: { orders:
   );
 };
 
+// ── Agents Tab ──
+const AgentsTab = ({ agents, addAgent, updateAgent, removeAgent }: { agents: Agent[]; addAgent: (a: Omit<Agent, "id" | "created_at">) => Promise<void>; updateAgent: (a: Agent) => Promise<void>; removeAgent: (id: string) => Promise<void> }) => {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [zone, setZone] = useState("");
+  const [eta, setEta] = useState(30);
+
+  const submit = async () => {
+    if (!name.trim() || !phone.trim()) { toast.error("Nom et téléphone requis"); return; }
+    await addAgent({ name: name.trim(), phone: phone.trim(), zone: zone.trim() || null, active: true, avg_eta_min: eta });
+    setName(""); setPhone(""); setZone(""); setEta(30);
+    toast.success("Agent ajouté");
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
+      <div className="glass-card rounded-2xl p-4 space-y-2">
+        <h3 className="font-bold text-sm text-foreground">Ajouter un agent</h3>
+        <div className="grid grid-cols-2 gap-2">
+          <Input placeholder="Nom" value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl text-sm h-9" />
+          <Input placeholder="Téléphone" value={phone} onChange={(e) => setPhone(e.target.value)} className="rounded-xl text-sm h-9" />
+          <Input placeholder="Zone (ex. Plateau)" value={zone} onChange={(e) => setZone(e.target.value)} className="rounded-xl text-sm h-9" />
+          <Input type="number" placeholder="ETA min" value={eta} onChange={(e) => setEta(Number(e.target.value) || 30)} className="rounded-xl text-sm h-9" />
+        </div>
+        <Button variant="hero" size="sm" className="rounded-xl w-full" onClick={submit}>
+          <Plus className="w-4 h-4 mr-1" /> Ajouter
+        </Button>
+      </div>
+
+      {agents.length === 0 ? (
+        <div className="text-center py-12 text-sm text-muted-foreground">Aucun agent</div>
+      ) : (
+        agents.map((a) => (
+          <div key={a.id} className="glass-card rounded-2xl p-3 flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${a.active ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
+              <UserCheck className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-bold text-foreground">{a.name}</div>
+              <div className="text-[11px] text-muted-foreground">{a.phone}{a.zone ? ` · ${a.zone}` : ""} · ≈ {a.avg_eta_min} min</div>
+            </div>
+            <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={() => updateAgent({ ...a, active: !a.active })}>
+              {a.active ? "Désactiver" : "Activer"}
+            </Button>
+            <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs text-destructive" onClick={() => { if (confirm("Supprimer ?")) removeAgent(a.id); }}>
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        ))
+      )}
+    </motion.div>
+  );
+};
+
 // ── Users Tab ──
 const UsersTab = () => {
   const [users, setUsers] = useState<any[]>([]);
