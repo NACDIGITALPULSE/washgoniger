@@ -30,6 +30,9 @@ const TrackingPage = () => {
   const [searched, setSearched] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
 
+  const [agent, setAgent] = useState<Agent | null>(null);
+  const lastStatus = useRef<string | null>(null);
+
   const parseOrder = (row: any): Order => ({
     id: row.id,
     orderNumber: row.order_number || undefined,
@@ -44,6 +47,8 @@ const TrackingPage = () => {
     status: row.status,
     createdAt: new Date(row.created_at),
     total: Number(row.total),
+    agentId: row.agent_id || undefined,
+    agentEtaMin: row.agent_eta_min ?? undefined,
   });
 
   const search = async () => {
