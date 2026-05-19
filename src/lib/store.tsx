@@ -1,19 +1,25 @@
-import { Order, Service, DEFAULT_SERVICES, SelectedOptionWithQty } from "@/lib/services";
+import { Order, Service, DEFAULT_SERVICES, SelectedOptionWithQty, Agent } from "@/lib/services";
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AppState {
   orders: Order[];
   services: Service[];
+  agents: Agent[];
   servicesLoading: boolean;
   ordersLoading: boolean;
   addOrder: (order: Order) => Promise<void>;
   updateOrderStatus: (id: string, status: Order["status"]) => Promise<void>;
+  assignAgent: (orderId: string, agentId: string | null) => Promise<void>;
   updateService: (service: Service) => Promise<void>;
   addService: (service: Service) => Promise<void>;
   removeService: (id: string) => Promise<void>;
+  addAgent: (a: Omit<Agent, "id" | "created_at">) => Promise<void>;
+  updateAgent: (a: Agent) => Promise<void>;
+  removeAgent: (id: string) => Promise<void>;
   refreshServices: () => Promise<void>;
   refreshOrders: () => Promise<void>;
+  refreshAgents: () => Promise<void>;
 }
 
 const AppContext = createContext<AppState | null>(null);
