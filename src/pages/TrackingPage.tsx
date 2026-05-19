@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import SEO from "@/components/SEO";
 import { motion } from "framer-motion";
-import { Search, Phone, MapPin, Clock, CheckCircle2, Truck, Package, XCircle, PackageCheck, Home } from "lucide-react";
+import { Search, Phone, MapPin, Clock, CheckCircle2, Truck, Package, XCircle, PackageCheck, Home, UserCheck, MessageCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Order } from "@/lib/services";
+import { Order, Agent } from "@/lib/services";
+import { toast } from "sonner";
 
 const trackingSteps = [
   { status: "pending", label: "En attente", icon: Clock, desc: "Votre commande a été reçue" },
