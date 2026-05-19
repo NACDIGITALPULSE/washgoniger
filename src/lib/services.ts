@@ -51,6 +51,19 @@ export interface Order {
   promoCode?: string;
   discount?: number;
   receiptUrl?: string;
+  agentId?: string;
+  agentEtaMin?: number;
+  assignedAt?: Date;
+}
+
+export interface Agent {
+  id: string;
+  name: string;
+  phone: string;
+  zone?: string | null;
+  active: boolean;
+  avg_eta_min: number;
+  created_at: string;
 }
 
 export interface LoyaltyPoint {
