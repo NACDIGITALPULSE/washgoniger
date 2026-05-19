@@ -228,6 +228,7 @@ const AdminPage = () => {
   const tabs: { key: TabKey; label: string; icon: string }[] = [
     { key: "dashboard", label: "Stats", icon: "📊" },
     { key: "orders", label: "Cmd", icon: "📋" },
+    { key: "agents", label: "Agents", icon: "🧑‍🔧" },
     { key: "clients", label: "Clients", icon: "📞" },
     { key: "users", label: "Comptes", icon: "👥" },
     { key: "notifications", label: "Notifs", icon: "🔔" },
