@@ -791,6 +791,7 @@ const OrdersTab = ({ orders, updateOrderStatus, agents, assignAgent }: { orders:
                     {order.location === "domicile" ? `📍 ${order.address}` : "🏪 Sur place"} • {order.payment === "cash" ? "💵 Cash" : `💳 ${order.payment}`}
                   </div>
               </div>
+              </div>
               {/* Agent assignment */}
               <div className="flex items-center gap-2 py-2 border-t border-border/40">
                 <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Agent</span>
