@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Order, Service, ServiceOption } from "@/lib/services";
+import { Order, Service, ServiceOption, Agent } from "@/lib/services";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
