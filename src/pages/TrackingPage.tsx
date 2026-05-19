@@ -207,6 +207,35 @@ const TrackingPage = () => {
               </div>
             </div>
 
+            {/* Agent card */}
+            {agent && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-2xl p-4 border border-secondary/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-secondary to-primary flex items-center justify-center">
+                    <UserCheck className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Agent assigné</div>
+                    <div className="font-bold text-foreground text-sm">{agent.name}</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {agent.zone ? `Zone ${agent.zone} · ` : ""}≈ {order.agentEtaMin ?? agent.avg_eta_min} min
+                    </div>
+                  </div>
+                  <a href={`tel:${agent.phone}`} className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Phone className="w-4 h-4 text-primary" />
+                  </a>
+                  <a
+                    href={`https://wa.me/${agent.phone.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-9 h-9 rounded-xl bg-[#25D366]/15 flex items-center justify-center"
+                  >
+                    <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                  </a>
+                </div>
+              </motion.div>
+            )}
+
             {/* Timeline */}
             <div className="glass-card rounded-2xl p-5">
               <h3 className="font-bold text-foreground text-sm mb-5">Progression</h3>
