@@ -668,7 +668,7 @@ const ClientsTab = ({ orders }: { orders: Order[] }) => {
 };
 
 // ── Orders Tab with archive ──
-const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrderStatus: (id: string, status: Order["status"]) => void }) => {
+const OrdersTab = ({ orders, updateOrderStatus, agents, assignAgent }: { orders: Order[]; updateOrderStatus: (id: string, status: Order["status"]) => void; agents: Agent[]; assignAgent: (orderId: string, agentId: string | null) => Promise<void> }) => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
