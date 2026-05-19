@@ -53,6 +53,9 @@ const dbRowToOrder = (row: any): Order => ({
   status: row.status,
   createdAt: new Date(row.created_at),
   total: Number(row.total),
+  agentId: row.agent_id || undefined,
+  agentEtaMin: row.agent_eta_min ?? undefined,
+  assignedAt: row.assigned_at ? new Date(row.assigned_at) : undefined,
 });
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
