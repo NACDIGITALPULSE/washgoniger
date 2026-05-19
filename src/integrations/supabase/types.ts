@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      agents: {
+        Row: {
+          active: boolean
+          avg_eta_min: number
+          created_at: string
+          current_location: Json | null
+          id: string
+          name: string
+          phone: string
+          zone: string | null
+        }
+        Insert: {
+          active?: boolean
+          avg_eta_min?: number
+          created_at?: string
+          current_location?: Json | null
+          id?: string
+          name: string
+          phone: string
+          zone?: string | null
+        }
+        Update: {
+          active?: boolean
+          avg_eta_min?: number
+          created_at?: string
+          current_location?: Json | null
+          id?: string
+          name?: string
+          phone?: string
+          zone?: string | null
+        }
+        Relationships: []
+      }
       loyalty_points: {
         Row: {
           created_at: string
@@ -52,6 +85,9 @@ export type Database = {
       orders: {
         Row: {
           address: string | null
+          agent_eta_min: number | null
+          agent_id: string | null
+          assigned_at: string | null
           client_name: string
           client_phone: string
           created_at: string
@@ -72,6 +108,9 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          agent_eta_min?: number | null
+          agent_id?: string | null
+          assigned_at?: string | null
           client_name: string
           client_phone: string
           created_at?: string
@@ -92,6 +131,9 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          agent_eta_min?: number | null
+          agent_id?: string | null
+          assigned_at?: string | null
           client_name?: string
           client_phone?: string
           created_at?: string
@@ -110,7 +152,15 @@ export type Database = {
           status?: string
           total?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_receipts: {
         Row: {
