@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Order, Service, ServiceOption } from "@/lib/services";
+import { Order, Service, ServiceOption, Agent } from "@/lib/services";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -181,10 +181,10 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 const ADMIN_WHATSAPP = "22788082987";
 const CHART_COLORS = ["hsl(215, 80%, 48%)", "hsl(155, 60%, 42%)", "hsl(38, 92%, 50%)", "hsl(0, 84%, 60%)", "hsl(270, 60%, 50%)", "hsl(190, 70%, 45%)"];
 
-type TabKey = "dashboard" | "orders" | "clients" | "users" | "notifications" | "receipts" | "accounting" | "services" | "promos" | "data";
+type TabKey = "dashboard" | "orders" | "agents" | "clients" | "users" | "notifications" | "receipts" | "accounting" | "services" | "promos" | "data";
 
 const AdminPage = () => {
-  const { orders, updateOrderStatus, services, updateService, addService, removeService } = useAppState();
+  const { orders, updateOrderStatus, assignAgent, agents, addAgent, updateAgent, removeAgent, services, updateService, addService, removeService } = useAppState();
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabKey>("dashboard");
 
@@ -228,6 +228,7 @@ const AdminPage = () => {
   const tabs: { key: TabKey; label: string; icon: string }[] = [
     { key: "dashboard", label: "Stats", icon: "📊" },
     { key: "orders", label: "Cmd", icon: "📋" },
+    { key: "agents", label: "Agents", icon: "🧑‍🔧" },
     { key: "clients", label: "Clients", icon: "📞" },
     { key: "users", label: "Comptes", icon: "👥" },
     { key: "notifications", label: "Notifs", icon: "🔔" },
@@ -302,7 +303,8 @@ const AdminPage = () => {
         <div className="mt-5">
           <AnimatePresence mode="wait">
             {tab === "dashboard" && <DashboardTab key="dash" orders={orders} totalRevenue={totalRevenue} />}
-            {tab === "orders" && <OrdersTab key="ord" orders={orders} updateOrderStatus={updateOrderStatus} />}
+            {tab === "orders" && <OrdersTab key="ord" orders={orders} updateOrderStatus={updateOrderStatus} agents={agents} assignAgent={assignAgent} />}
+            {tab === "agents" && <AgentsTab key="agt" agents={agents} addAgent={addAgent} updateAgent={updateAgent} removeAgent={removeAgent} />}
             {tab === "clients" && <ClientsTab key="cli" orders={orders} />}
             {tab === "users" && <UsersTab key="usr" />}
             {tab === "notifications" && <NotificationsTab key="notif" orders={orders} />}
@@ -666,7 +668,7 @@ const ClientsTab = ({ orders }: { orders: Order[] }) => {
 };
 
 // ── Orders Tab with archive ──
-const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrderStatus: (id: string, status: Order["status"]) => void }) => {
+const OrdersTab = ({ orders, updateOrderStatus, agents, assignAgent }: { orders: Order[]; updateOrderStatus: (id: string, status: Order["status"]) => void; agents: Agent[]; assignAgent: (orderId: string, agentId: string | null) => Promise<void> }) => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
@@ -788,7 +790,24 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
                   <div className="text-[10px] text-muted-foreground">
                     {order.location === "domicile" ? `📍 ${order.address}` : "🏪 Sur place"} • {order.payment === "cash" ? "💵 Cash" : `💳 ${order.payment}`}
                   </div>
-                </div>
+              </div>
+              </div>
+              {/* Agent assignment */}
+              <div className="flex items-center gap-2 py-2 border-t border-border/40">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Agent</span>
+                <select
+                  value={order.agentId || ""}
+                  onChange={(e) => assignAgent(order.id, e.target.value || null)}
+                  className="flex-1 text-xs rounded-lg bg-muted px-2 py-1 border border-border focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">— Non assigné —</option>
+                  {agents.filter((a) => a.active).map((a) => (
+                    <option key={a.id} value={a.id}>{a.name} {a.zone ? `· ${a.zone}` : ""} (≈{a.avg_eta_min}min)</option>
+                  ))}
+                </select>
+                {order.agentEtaMin != null && (
+                  <span className="text-[10px] font-bold text-primary">≈ {order.agentEtaMin} min</span>
+                )}
                 <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full text-primary-foreground ${status?.color || "bg-muted"}`}>{status?.label || order.status}</span>
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-border">
@@ -822,6 +841,60 @@ const OrdersTab = ({ orders, updateOrderStatus }: { orders: Order[]; updateOrder
             </motion.div>
           );
         })
+      )}
+    </motion.div>
+  );
+};
+
+// ── Agents Tab ──
+const AgentsTab = ({ agents, addAgent, updateAgent, removeAgent }: { agents: Agent[]; addAgent: (a: Omit<Agent, "id" | "created_at">) => Promise<void>; updateAgent: (a: Agent) => Promise<void>; removeAgent: (id: string) => Promise<void> }) => {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [zone, setZone] = useState("");
+  const [eta, setEta] = useState(30);
+
+  const submit = async () => {
+    if (!name.trim() || !phone.trim()) { toast.error("Nom et téléphone requis"); return; }
+    await addAgent({ name: name.trim(), phone: phone.trim(), zone: zone.trim() || null, active: true, avg_eta_min: eta });
+    setName(""); setPhone(""); setZone(""); setEta(30);
+    toast.success("Agent ajouté");
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
+      <div className="glass-card rounded-2xl p-4 space-y-2">
+        <h3 className="font-bold text-sm text-foreground">Ajouter un agent</h3>
+        <div className="grid grid-cols-2 gap-2">
+          <Input placeholder="Nom" value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl text-sm h-9" />
+          <Input placeholder="Téléphone" value={phone} onChange={(e) => setPhone(e.target.value)} className="rounded-xl text-sm h-9" />
+          <Input placeholder="Zone (ex. Plateau)" value={zone} onChange={(e) => setZone(e.target.value)} className="rounded-xl text-sm h-9" />
+          <Input type="number" placeholder="ETA min" value={eta} onChange={(e) => setEta(Number(e.target.value) || 30)} className="rounded-xl text-sm h-9" />
+        </div>
+        <Button variant="hero" size="sm" className="rounded-xl w-full" onClick={submit}>
+          <Plus className="w-4 h-4 mr-1" /> Ajouter
+        </Button>
+      </div>
+
+      {agents.length === 0 ? (
+        <div className="text-center py-12 text-sm text-muted-foreground">Aucun agent</div>
+      ) : (
+        agents.map((a) => (
+          <div key={a.id} className="glass-card rounded-2xl p-3 flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${a.active ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
+              <UserCheck className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-bold text-foreground">{a.name}</div>
+              <div className="text-[11px] text-muted-foreground">{a.phone}{a.zone ? ` · ${a.zone}` : ""} · ≈ {a.avg_eta_min} min</div>
+            </div>
+            <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs" onClick={() => updateAgent({ ...a, active: !a.active })}>
+              {a.active ? "Désactiver" : "Activer"}
+            </Button>
+            <Button size="sm" variant="outline" className="rounded-xl h-8 text-xs text-destructive" onClick={() => { if (confirm("Supprimer ?")) removeAgent(a.id); }}>
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        ))
       )}
     </motion.div>
   );

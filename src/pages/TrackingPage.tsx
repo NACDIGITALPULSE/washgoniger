@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import SEO from "@/components/SEO";
 import { motion } from "framer-motion";
-import { Search, Phone, MapPin, Clock, CheckCircle2, Truck, Package, XCircle, PackageCheck, Home } from "lucide-react";
+import { Search, Phone, MapPin, Clock, CheckCircle2, Truck, Package, XCircle, PackageCheck, Home, UserCheck, MessageCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Order } from "@/lib/services";
+import { Order, Agent } from "@/lib/services";
+import { toast } from "sonner";
 
 const trackingSteps = [
   { status: "pending", label: "En attente", icon: Clock, desc: "Votre commande a été reçue" },
@@ -29,6 +30,9 @@ const TrackingPage = () => {
   const [searched, setSearched] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
 
+  const [agent, setAgent] = useState<Agent | null>(null);
+  const lastStatus = useRef<string | null>(null);
+
   const parseOrder = (row: any): Order => ({
     id: row.id,
     orderNumber: row.order_number || undefined,
@@ -43,6 +47,8 @@ const TrackingPage = () => {
     status: row.status,
     createdAt: new Date(row.created_at),
     total: Number(row.total),
+    agentId: row.agent_id || undefined,
+    agentEtaMin: row.agent_eta_min ?? undefined,
   });
 
   const search = async () => {
@@ -86,17 +92,40 @@ const TrackingPage = () => {
     setLoading(false);
   };
 
-  // Realtime updates
+  // Realtime updates + status toasts
   useEffect(() => {
     if (!order) return;
+    const STATUS_TOASTS: Record<string, string> = {
+      accepted: "✅ Commande acceptée",
+      in_progress: "🧼 Prestation en cours",
+      ready: "📦 Votre commande est prête",
+      delivered: "🚚 Agent en route — livraison",
+      completed: "🎉 Commande terminée",
+      cancelled: "❌ Commande annulée",
+    };
+    lastStatus.current = order.status;
     const channel = supabase
       .channel("tracking-" + order.id)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${order.id}` }, (payload) => {
-        setOrder(parseOrder(payload.new));
+        const next = parseOrder(payload.new);
+        if (next.status !== lastStatus.current) {
+          const msg = STATUS_TOASTS[next.status];
+          if (msg) toast.success(msg);
+          lastStatus.current = next.status;
+        }
+        setOrder(next);
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [order?.id]);
+
+  // Load agent details when assigned
+  useEffect(() => {
+    if (!order?.agentId) { setAgent(null); return; }
+    supabase.from("agents").select("*").eq("id", order.agentId).maybeSingle().then(({ data }) => {
+      if (data) setAgent(data as any);
+    });
+  }, [order?.agentId]);
 
   const currentStep = order ? statusIndex[order.status] : -1;
   const isCancelled = order?.status === "cancelled";
@@ -177,6 +206,35 @@ const TrackingPage = () => {
                 <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {order.location === "domicile" ? order.address || "Domicile" : "Sur place"}</span>
               </div>
             </div>
+
+            {/* Agent card */}
+            {agent && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-2xl p-4 border border-secondary/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-secondary to-primary flex items-center justify-center">
+                    <UserCheck className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Agent assigné</div>
+                    <div className="font-bold text-foreground text-sm">{agent.name}</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {agent.zone ? `Zone ${agent.zone} · ` : ""}≈ {order.agentEtaMin ?? agent.avg_eta_min} min
+                    </div>
+                  </div>
+                  <a href={`tel:${agent.phone}`} className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Phone className="w-4 h-4 text-primary" />
+                  </a>
+                  <a
+                    href={`https://wa.me/${agent.phone.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-9 h-9 rounded-xl bg-[#25D366]/15 flex items-center justify-center"
+                  >
+                    <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                  </a>
+                </div>
+              </motion.div>
+            )}
 
             {/* Timeline */}
             <div className="glass-card rounded-2xl p-5">

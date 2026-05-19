@@ -1,52 +1,58 @@
 
-# Plan — 3 améliorations UX premium
+# Plan — 3 améliorations majeures
 
-## 1. Écran de confirmation iOS glass (`OrderConfirmationPage.tsx`)
+## 1. Workflow dispatch admin avec agents & ETA live
 
-Refonte visuelle en glassmorphism cohérent avec le Hero :
-- **Header succès** : icône check animée dans un cercle gradient (primary→secondary), titre "Commande confirmée" en `font-extrabold tracking-tight`, n° commande WG-XXX en chip glass.
-- **Carte ETA glass** : `glass-card` avec icône `Clock`, temps estimé en gros (ex. "≈ 35 min"), label "Arrivée prévue" + heure calculée.
-- **Carte récap clair** : service, options sélectionnées, adresse, mode paiement — chaque ligne avec icône + valeur à droite, séparateurs `border-border/40`.
-- **Carte total** : montant FCFA en `text-3xl font-bold`, badge promo si applicable.
-- **Boutons d'action sticky bas** :
-  - Bouton principal **"Télécharger le reçu PDF"** (toujours visible, pas seulement dans le fallback) — gradient primary, icône `Download`.
-  - Bouton secondaire "Partager sur WhatsApp" (ouvre wa.me avec lien PDF).
-  - Lien tertiaire "Suivre ma commande".
+### Base de données (nouvelle migration)
+- Table `agents` : `id`, `name`, `phone`, `zone`, `active`, `avg_eta_min` (défaut 30), `current_location` (jsonb {lat, lon, updated_at}), `created_at`.
+- Colonnes ajoutées à `orders` : `agent_id` (uuid, nullable, fk agents), `assigned_at`, `agent_eta_min` (int).
+- RLS : admins gèrent les agents, lecture publique des `agents.name/zone/avg_eta_min` (anonyme) pour permettre l'affichage de l'ETA côté client.
 
-## 2. Estimation de prix en temps réel sur l'accueil
+### Admin UI
+- Nouveau **tab "Agents"** dans `AdminPage.tsx` : liste, création (nom, tel, zone), activation/désactivation.
+- Dans **OrdersTab** : pour chaque commande en `pending`/`accepted`, dropdown "Assigner à un agent" → met à jour `agent_id`, passe la commande en `accepted`, calcule `agent_eta_min` selon la zone agent.
+- Badge agent visible sur la carte commande (nom + ETA).
 
-Nouveau composant `LivePriceEstimator` affiché sous les 2 grandes cartes CTA du Hero :
-- **Sélecteur de service** : tabs glass "Auto" / "Pressing".
-- **Si Auto** : chips de sélection type véhicule (Petite voiture, Berline, SUV, Utilitaire) → chaque type a un multiplicateur de prix.
-- **Si Pressing** : chips type vêtement (Chemise, Pantalon, Costume, Robe, Veste) + sélecteur quantité (−/+).
-- **Affichage live** : carte glass avec "Estimation" + montant FCFA mis à jour à chaque clic, animation `motion` sur le changement de prix.
-- **CTA** "Commander maintenant" qui pré-remplit la page commande avec les choix.
+### Côté client
+- `TrackingPage` et `OrderConfirmationPage` lisent `agent_id` + agent associé + ETA → affichent **"Agent : Moussa · ≈ 22 min"** dans la carte ETA, mise à jour realtime quand l'admin change.
 
-Prix calculés côté front depuis une table de tarifs (`src/lib/pricing.ts`) — pas de modif backend.
+## 2. Partage reçu WhatsApp fiable
 
-## 3. Géolocalisation pour ETA personnalisé dans le bandeau livraison
+Refonte de `sendReceiptWhatsApp` dans `OrderConfirmationPage.tsx` :
 
-- Hook `useGeoETA()` qui :
-  - Au montage, appelle `navigator.geolocation.getCurrentPosition()` avec timeout 5s.
-  - Calcule distance Haversine entre user et base WashGo (Niamey centre, coords en constante).
-  - Renvoie un ETA : `< 3km → 25 min`, `3–7km → 40 min`, `> 7km → 55 min`.
-  - Fallback si refus/erreur → "Moins de 45 minutes" (texte actuel).
-- Bandeau "Livraison garantie" affiche dynamiquement le texte personnalisé + un petit indicateur de zone (ex. "Zone Plateau · 25 min").
-- Gestion gracieuse : pas de blocage, pas de popup intrusive, ETA générique tant que la géoloc n'a pas répondu.
+1. **Toujours** uploader le PDF sur Supabase Storage bucket `receipts` (déjà existant) → URL publique.
+2. Inclure cette URL **dans le message WhatsApp** (`📎 Reçu : https://...`).
+3. Tenter `navigator.share({ files })` si supporté.
+4. Si échec/non-supporté : ouvrir `wa.me` avec le message incluant le lien PDF + déclencher téléchargement local.
+5. Le **fallback modal** affiche maintenant :
+   - Lien direct cliquable vers le PDF hébergé (utilisable pour l'envoyer depuis WhatsApp Web).
+   - Bouton "Copier le lien PDF" séparé du "Copier le message".
+   - Bouton "Télécharger PDF" (déjà là).
+6. Petit composant réutilisable `WhatsAppShareFallback` pour clarifier le code.
 
-## Détails techniques
+## 3. Suivi temps réel client (renforcement)
 
-- **Fichiers modifiés** :
-  - `src/pages/OrderConfirmationPage.tsx` — refonte UI glass + bouton PDF permanent
-  - `src/components/Hero.tsx` — intégration du composant estimateur
-  - `src/components/LivePriceEstimator.tsx` (nouveau)
-  - `src/lib/pricing.ts` (nouveau) — table tarifs auto/pressing
-  - `src/hooks/useGeoETA.ts` (nouveau) — géoloc + calcul ETA
-- **Pas de migration DB**, pas de nouveau secret, pas d'edge function.
-- **Tokens sémantiques** uniquement (`primary`, `secondary`, `glass-card`, `muted`) — aucune couleur en dur.
-- **Animations** : `framer-motion` déjà installé, transitions douces sur changement de prix et apparition ETA.
-- **PDF reçu** : réutilise `src/lib/receipt-pdf.ts` existant.
+Le `TrackingPage` reçoit déjà des updates realtime. Améliorations :
+
+- **Subscription élargie** : réagir à `INSERT/UPDATE` (pas seulement UPDATE) + écouter `payment_receipts` pour notifier "Reçu reçu ✓".
+- **Notifications toast in-app** sur changement de statut : "Votre commande est acceptée", "Agent en route", "Commande terminée" (sons légers).
+- **Carte agent live** sous le timeline quand `agent_id` existe : nom + téléphone (lien `tel:`) + bouton WhatsApp + ETA mis à jour.
+- **OrderConfirmationPage** : ajoute la même subscription realtime pour que le client voie son statut changer sans recharger (carte statut animée).
+- **MyOrdersPage** : badge "● Live" qui clignote quand une commande est en cours, refresh auto.
+
+## Fichiers modifiés / créés
+
+- `supabase/migrations/...` (nouvelle) — table agents + colonnes orders + RLS
+- `src/lib/services.ts` — type `Agent`, extension `Order` (agent_id, agent_eta_min)
+- `src/lib/store.tsx` — fetch agents, assignAgent
+- `src/pages/AdminPage.tsx` — tab Agents + dropdown assignation dans OrdersTab
+- `src/pages/OrderConfirmationPage.tsx` — refonte partage WhatsApp + realtime statut + carte agent
+- `src/pages/TrackingPage.tsx` — carte agent + toasts realtime
+- `src/pages/MyOrdersPage.tsx` — badge live
+- `src/components/WhatsAppShareFallback.tsx` (nouveau)
+- `src/hooks/useOrderRealtime.ts` (nouveau) — hook partagé
 
 ## Hors scope
-- Pas de changement de logique de paiement ni de schéma commande.
-- Pas de carte interactive (Mapbox) — juste calcul Haversine local.
+- Pas de tracking GPS continu de l'agent (juste ETA basé sur zone). Ajoutable plus tard avec une edge function.
+- Pas de notifications push web (besoin de service worker complet).
+- Pas de connexion login dédiée pour agents (admin gère depuis le dashboard).

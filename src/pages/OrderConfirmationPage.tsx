@@ -1,23 +1,63 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle2, Home, ClipboardList, Navigation, Download, Upload, FileCheck, Send, Copy, Phone, Clock, MapPin, CreditCard, Package, Hash } from "lucide-react";
+import { CheckCircle2, Home, ClipboardList, Navigation, Download, Upload, FileCheck, Send, Phone, Clock, MapPin, CreditCard, Package, Hash, UserCheck, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Order } from "@/lib/services";
+import { Order, Agent } from "@/lib/services";
 import { toast } from "sonner";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { buildReceiptPDF, downloadReceiptPDF } from "@/lib/receipt-pdf";
+import { WhatsAppShareFallback } from "@/components/WhatsAppShareFallback";
+import { useOrderRealtime } from "@/hooks/useOrderRealtime";
 
 const ADMIN_WHATSAPP = "22788082987";
+
+const statusBadge: Record<string, { label: string; color: string }> = {
+  pending: { label: "En attente", color: "bg-warning/15 text-warning border-warning/30" },
+  accepted: { label: "Acceptée", color: "bg-primary/15 text-primary border-primary/30" },
+  in_progress: { label: "En cours", color: "bg-primary/15 text-primary border-primary/30" },
+  ready: { label: "Prête", color: "bg-secondary/15 text-secondary border-secondary/30" },
+  delivered: { label: "Livrée", color: "bg-secondary/15 text-secondary border-secondary/30" },
+  completed: { label: "Terminée", color: "bg-success/15 text-success border-success/30" },
+  cancelled: { label: "Annulée", color: "bg-destructive/15 text-destructive border-destructive/30" },
+};
 
 const OrderConfirmationPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const order = location.state?.order as Order | undefined;
+  const initial = location.state?.order as Order | undefined;
+  const [order, setOrder] = useState<Order | undefined>(initial);
+  const [agent, setAgent] = useState<Agent | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [receiptUploaded, setReceiptUploaded] = useState(false);
-  const [whatsappFallback, setWhatsappFallback] = useState<{ text: string; phone: string } | null>(null);
+  const [whatsappFallback, setWhatsappFallback] = useState<{ text: string; phone: string; pdfUrl?: string } | null>(null);
+  const [sharing, setSharing] = useState(false);
+
+  // Realtime updates on this order
+  useOrderRealtime(order?.id, (row) => {
+    setOrder((prev) =>
+      prev
+        ? {
+            ...prev,
+            status: row.status,
+            agentId: row.agent_id || undefined,
+            agentEtaMin: row.agent_eta_min ?? undefined,
+          }
+        : prev
+    );
+  });
+
+  // Load agent if assigned
+  useEffect(() => {
+    if (!order?.agentId) {
+      setAgent(null);
+      return;
+    }
+    supabase.from("agents").select("*").eq("id", order.agentId).maybeSingle().then(({ data }) => {
+      if (data) setAgent(data as any);
+    });
+  }, [order?.agentId]);
 
   if (!order) {
     navigate("/");
@@ -33,8 +73,7 @@ const OrderConfirmationPage = () => {
     day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
   });
 
-  // ETA: 35min estimate
-  const etaMin = 35;
+  const etaMin = order.agentEtaMin ?? 35;
   const eta = new Date(Date.now() + etaMin * 60 * 1000).toLocaleTimeString("fr-FR", {
     hour: "2-digit", minute: "2-digit"
   });
@@ -48,12 +87,42 @@ const OrderConfirmationPage = () => {
     toast.success("Reçu PDF téléchargé !");
   };
 
+  // Upload PDF to Supabase storage, return public URL
+  const uploadPdfToStorage = async (): Promise<string | null> => {
+    try {
+      const blob = buildInvoicePDF().output("blob");
+      const path = `${order.id}/receipt-${Date.now()}.pdf`;
+      const { error } = await supabase.storage.from("receipts").upload(path, blob, {
+        contentType: "application/pdf",
+        upsert: true,
+      });
+      if (error) return null;
+      const { data } = supabase.storage.from("receipts").getPublicUrl(path);
+      return data.publicUrl;
+    } catch {
+      return null;
+    }
+  };
+
   const sendReceiptWhatsApp = async () => {
+    if (sharing) return;
+    setSharing(true);
+
     const optionsText = optionsList
       .map(({ option, quantity }) => `• ${option.name} × ${quantity}${option.unit === "kg" ? " kg" : ""} — ${(option.price * quantity).toLocaleString("fr-FR")} F`)
       .join("\n");
-    const message = `🧾 *Reçu WashGo Niger*\n\n*N°* ${orderNumber}\n*Date :* ${orderDate}\n\n*Client :* ${order.clientName}\n*Tél :* ${order.clientPhone}\n\n*Service :* ${order.service.icon} ${order.service.name}\n${optionsText}\n\n*Lieu :* ${order.location === "domicile" ? "🏠 Domicile" : "🏪 Sur place"}\n*Paiement :* ${paymentLabels[order.payment] || order.payment}\n\n*TOTAL : ${order.total.toLocaleString("fr-FR")} FCFA*\n\n🎁 +10 points fidélité\nMerci pour votre confiance !`;
 
+    // Upload PDF first → URL is the most reliable channel
+    toast.info("Préparation du reçu…");
+    const pdfUrl = await uploadPdfToStorage();
+
+    const messageBase = `🧾 *Reçu WashGo Niger*\n\n*N°* ${orderNumber}\n*Date :* ${orderDate}\n\n*Client :* ${order.clientName}\n*Tél :* ${order.clientPhone}\n\n*Service :* ${order.service.icon} ${order.service.name}\n${optionsText}\n\n*Lieu :* ${order.location === "domicile" ? "🏠 Domicile" : "🏪 Sur place"}\n*Paiement :* ${paymentLabels[order.payment] || order.payment}\n\n*TOTAL : ${order.total.toLocaleString("fr-FR")} FCFA*\n\n🎁 +10 points fidélité\nMerci pour votre confiance !`;
+    const message = pdfUrl ? `${messageBase}\n\n📎 Reçu PDF : ${pdfUrl}` : messageBase;
+
+    const phone = order.clientPhone.replace(/\D/g, "");
+    const fullPhone = phone.startsWith("227") ? phone : `227${phone}`;
+
+    // Try native share (mobile)
     try {
       const blob = buildInvoicePDF().output("blob");
       const file = new File([blob], `Facture-${orderNumber}.pdf`, { type: "application/pdf" });
@@ -61,29 +130,28 @@ const OrderConfirmationPage = () => {
       if (nav.canShare && nav.canShare({ files: [file] })) {
         await nav.share({ files: [file], title: `Reçu WashGo ${orderNumber}`, text: message });
         toast.success("Reçu partagé !");
+        setSharing(false);
         return;
       }
     } catch (err) {
-      if ((err as Error).name === "AbortError") return;
+      if ((err as Error).name === "AbortError") {
+        setSharing(false);
+        return;
+      }
     }
 
-    buildInvoicePDF().save(`Facture-${orderNumber}.pdf`);
-    const phone = order.clientPhone.replace(/\D/g, "");
-    const fullPhone = phone.startsWith("227") ? phone : `227${phone}`;
+    // Open WhatsApp with the message (containing the PDF link)
     const url = `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
     const popup = window.open(url, "_blank");
+
+    // Always show fallback to give the user a reliable PDF link to share
+    setWhatsappFallback({ text: message, phone: fullPhone, pdfUrl: pdfUrl || undefined });
     if (!popup) {
-      try {
-        await navigator.clipboard.writeText(message);
-        setWhatsappFallback({ text: message, phone: fullPhone });
-        toast.info("WhatsApp bloqué. Le message a été copié.");
-      } catch {
-        setWhatsappFallback({ text: message, phone: fullPhone });
-        toast.info("WhatsApp bloqué. Utilisez le fallback ci-dessous.");
-      }
-      return;
+      toast.info("WhatsApp bloqué — utilisez le panneau ci-dessous.");
+    } else if (pdfUrl) {
+      toast.success("WhatsApp ouvert. Le lien PDF est inclus dans le message.");
     }
-    toast.info("PDF téléchargé. Joignez-le manuellement dans WhatsApp.");
+    setSharing(false);
   };
 
   const uploadReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -123,16 +191,16 @@ const OrderConfirmationPage = () => {
     );
   };
 
+  const sBadge = statusBadge[order.status];
+
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Ambient blobs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-32 -right-20 w-80 h-80 rounded-full bg-primary/15 blur-3xl" />
         <div className="absolute top-40 -left-24 w-72 h-72 rounded-full bg-secondary/15 blur-3xl" />
       </div>
 
       <div className="relative container max-w-lg mx-auto px-5 pt-8 pb-36">
-        {/* Success header */}
         <motion.div
           initial={{ scale: 0, rotate: -30 }}
           animate={{ scale: 1, rotate: 0 }}
@@ -143,43 +211,41 @@ const OrderConfirmationPage = () => {
         </motion.div>
 
         <motion.h1
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
           className="text-3xl font-extrabold tracking-tight text-center text-foreground"
         >
           Commande confirmée
         </motion.h1>
         <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
           className="text-center text-muted-foreground text-sm mt-1 mb-4"
         >
           L'admin a été notifié sur WhatsApp.
         </motion.p>
 
-        {/* Order number chip */}
+        {/* Order number + live status chip */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="flex items-center justify-center gap-2 mb-6"
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+          className="flex items-center justify-center gap-2 mb-6 flex-wrap"
         >
           <div className="flex items-center gap-1.5 bg-muted/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-border/60">
             <Hash className="w-3.5 h-3.5 text-primary" />
             <span className="text-[12px] font-bold text-foreground">{orderNumber}</span>
           </div>
-          <div className="flex items-center gap-1.5 bg-secondary/15 px-3 py-1.5 rounded-full border border-secondary/30">
-            <span className="text-[11px] font-semibold text-secondary">+10 pts fidélité 🎁</span>
-          </div>
+          <motion.div
+            key={order.status}
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${sBadge.color}`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+            <span className="text-[11px] font-bold">{sBadge.label}</span>
+          </motion.div>
         </motion.div>
 
         {/* ETA Card */}
         <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
           className="rounded-[28px] p-5 glass-card border border-border/60 backdrop-blur-xl mb-4 relative overflow-hidden"
         >
           <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-primary/10 blur-3xl" />
@@ -202,11 +268,41 @@ const OrderConfirmationPage = () => {
           </div>
         </motion.div>
 
+        {/* Agent Card */}
+        {agent && (
+          <motion.div
+            initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+            className="rounded-[28px] p-5 glass-card border border-secondary/40 backdrop-blur-xl mb-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-secondary to-primary flex items-center justify-center shadow-lg">
+                <UserCheck className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Agent assigné</p>
+                <p className="text-base font-bold text-foreground">{agent.name}</p>
+                {agent.zone && <p className="text-[11px] text-muted-foreground">Zone {agent.zone}</p>}
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <a href={`tel:${agent.phone}`} className="w-9 h-9 rounded-xl bg-primary/10 hover:bg-primary/15 flex items-center justify-center">
+                  <Phone className="w-4 h-4 text-primary" />
+                </a>
+                <a
+                  href={`https://wa.me/${agent.phone.replace(/\D/g, "").replace(/^227?/, "227")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-9 h-9 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 flex items-center justify-center"
+                >
+                  <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                </a>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Récap Card */}
         <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.36 }}
+          initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 }}
           className="rounded-[28px] p-5 glass-card border border-border/60 backdrop-blur-xl mb-4"
         >
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-3">Récapitulatif</p>
@@ -238,11 +334,8 @@ const OrderConfirmationPage = () => {
           </div>
         </motion.div>
 
-        {/* Secondary actions */}
         <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.42 }}
+          initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 }}
           className="space-y-2.5"
         >
           {(order.payment === "nita" || order.payment === "amanata") && (
@@ -272,7 +365,7 @@ const OrderConfirmationPage = () => {
           )}
 
           <div className="grid grid-cols-2 gap-2.5 pt-1">
-            <Button variant="ghost" className="rounded-2xl h-11" onClick={() => navigate("/my-orders")}>
+            <Button variant="ghost" className="rounded-2xl h-11" onClick={() => navigate("/tracking")}>
               <ClipboardList className="w-4 h-4 mr-1" /> Suivi
             </Button>
             <Button variant="ghost" className="rounded-2xl h-11" onClick={() => navigate("/")}>
@@ -282,11 +375,8 @@ const OrderConfirmationPage = () => {
         </motion.div>
       </div>
 
-      {/* Sticky bottom action bar */}
       <motion.div
-        initial={{ y: 60, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.5 }}
+        initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }}
         className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-5 pt-3 bg-gradient-to-t from-background via-background/95 to-transparent backdrop-blur-md"
       >
         <div className="max-w-lg mx-auto grid grid-cols-5 gap-2">
@@ -299,73 +389,23 @@ const OrderConfirmationPage = () => {
           </Button>
           <Button
             onClick={sendReceiptWhatsApp}
+            disabled={sharing}
             className="col-span-2 rounded-2xl h-12 bg-[#25D366] hover:bg-[#25D366]/90 text-white font-bold"
           >
             <Send className="w-4 h-4 mr-1.5" />
-            WhatsApp
+            {sharing ? "..." : "WhatsApp"}
           </Button>
         </div>
       </motion.div>
 
-      {/* WhatsApp fallback */}
       {whatsappFallback && (
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="fixed bottom-24 left-4 right-4 z-50 bg-background rounded-3xl p-5 shadow-2xl border border-border space-y-4 max-w-sm mx-auto"
-        >
-          <div className="text-center">
-            <div className="text-3xl mb-2">📱</div>
-            <h3 className="font-bold text-foreground">WhatsApp bloqué</h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              Votre navigateur a bloqué l'ouverture automatique.
-            </p>
-          </div>
-
-          <div className="rounded-xl bg-muted/50 p-3 space-y-2 border border-border">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Numéro</span>
-              <span className="text-sm font-bold text-foreground">+{whatsappFallback.phone}</span>
-            </div>
-            <textarea
-              readOnly
-              value={whatsappFallback.text}
-              className="w-full bg-background rounded-lg p-2 text-[11px] text-foreground border border-border resize-none h-24"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              className="rounded-xl h-11"
-              onClick={() => {
-                navigator.clipboard.writeText(whatsappFallback.text);
-                toast.success("Texte copié !");
-              }}
-            >
-              <Copy className="w-4 h-4 mr-1.5" /> Copier
-            </Button>
-            <Button
-              className="rounded-xl h-11 bg-[#25D366] hover:bg-[#25D366]/90 text-white"
-              onClick={() => {
-                window.open(`https://wa.me/${whatsappFallback.phone}?text=${encodeURIComponent(whatsappFallback.text)}`, "_blank");
-              }}
-            >
-              <Phone className="w-4 h-4 mr-1.5" /> WhatsApp
-            </Button>
-          </div>
-
-          <Button
-            variant="outline"
-            className="w-full rounded-xl h-11 border-primary/30 text-primary hover:bg-primary/5"
-            onClick={downloadInvoicePDF}
-          >
-            <Download className="w-4 h-4 mr-1.5" /> Télécharger le reçu PDF
-          </Button>
-          <Button variant="ghost" className="w-full rounded-xl" onClick={() => setWhatsappFallback(null)}>
-            Fermer
-          </Button>
-        </motion.div>
+        <WhatsAppShareFallback
+          phone={whatsappFallback.phone}
+          text={whatsappFallback.text}
+          pdfUrl={whatsappFallback.pdfUrl}
+          onDownload={downloadInvoicePDF}
+          onClose={() => setWhatsappFallback(null)}
+        />
       )}
     </div>
   );

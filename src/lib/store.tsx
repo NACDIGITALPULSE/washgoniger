@@ -1,19 +1,25 @@
-import { Order, Service, DEFAULT_SERVICES, SelectedOptionWithQty } from "@/lib/services";
+import { Order, Service, DEFAULT_SERVICES, SelectedOptionWithQty, Agent } from "@/lib/services";
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AppState {
   orders: Order[];
   services: Service[];
+  agents: Agent[];
   servicesLoading: boolean;
   ordersLoading: boolean;
   addOrder: (order: Order) => Promise<void>;
   updateOrderStatus: (id: string, status: Order["status"]) => Promise<void>;
+  assignAgent: (orderId: string, agentId: string | null) => Promise<void>;
   updateService: (service: Service) => Promise<void>;
   addService: (service: Service) => Promise<void>;
   removeService: (id: string) => Promise<void>;
+  addAgent: (a: Omit<Agent, "id" | "created_at">) => Promise<void>;
+  updateAgent: (a: Agent) => Promise<void>;
+  removeAgent: (id: string) => Promise<void>;
   refreshServices: () => Promise<void>;
   refreshOrders: () => Promise<void>;
+  refreshAgents: () => Promise<void>;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -47,11 +53,15 @@ const dbRowToOrder = (row: any): Order => ({
   status: row.status,
   createdAt: new Date(row.created_at),
   total: Number(row.total),
+  agentId: row.agent_id || undefined,
+  agentEtaMin: row.agent_eta_min ?? undefined,
+  assignedAt: row.assigned_at ? new Date(row.assigned_at) : undefined,
 });
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [services, setServices] = useState<Service[]>(DEFAULT_SERVICES);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [servicesLoading, setServicesLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
@@ -77,10 +87,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setOrdersLoading(false);
   }, []);
 
+  const fetchAgents = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("agents")
+      .select("*")
+      .order("created_at");
+    if (!error && data) setAgents(data as any);
+  }, []);
+
   useEffect(() => {
     fetchServices();
     fetchOrders();
-  }, [fetchOrders]);
+    fetchAgents();
+  }, [fetchOrders, fetchAgents]);
+
+  // Realtime sync for agents
+  useEffect(() => {
+    const ch = supabase
+      .channel("agents-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "agents" }, () => fetchAgents())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [fetchAgents]);
 
   const addOrder = async (order: Order) => {
     const selectedOptionData = order.selectedOptions && order.selectedOptions.length > 0
@@ -107,7 +135,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
     if (!error) {
       setOrders((prev) => [order, ...prev]);
-      // Award loyalty points (10 points per order)
       await supabase.from("loyalty_points").insert({
         user_phone: order.clientPhone,
         points: 10,
@@ -118,12 +145,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateOrderStatus = async (id: string, status: Order["status"]) => {
-    const { error } = await supabase
-      .from("orders")
-      .update({ status })
-      .eq("id", id);
+    const { error } = await supabase.from("orders").update({ status }).eq("id", id);
     if (!error) {
       setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+    }
+  };
+
+  const assignAgent = async (orderId: string, agentId: string | null) => {
+    const agent = agentId ? agents.find((a) => a.id === agentId) : null;
+    const etaMin = agent?.avg_eta_min ?? null;
+    const patch: any = {
+      agent_id: agentId,
+      assigned_at: agentId ? new Date().toISOString() : null,
+      agent_eta_min: etaMin,
+    };
+    if (agentId) patch.status = "accepted";
+    const { error } = await supabase.from("orders").update(patch).eq("id", orderId);
+    if (!error) {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId
+            ? { ...o, agentId: agentId || undefined, agentEtaMin: etaMin ?? undefined, status: agentId ? "accepted" : o.status }
+            : o
+        )
+      );
     }
   };
 
@@ -152,20 +197,41 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       category: service.category,
       options: service.options as any,
     });
-    if (!error) {
-      setServices((prev) => [...prev, service]);
-    }
+    if (!error) setServices((prev) => [...prev, service]);
   };
 
   const removeService = async (id: string) => {
     const { error } = await supabase.from("services").delete().eq("id", id);
-    if (!error) {
-      setServices((prev) => prev.filter((s) => s.id !== id));
-    }
+    if (!error) setServices((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const addAgent = async (a: Omit<Agent, "id" | "created_at">) => {
+    const { data, error } = await supabase.from("agents").insert({
+      name: a.name, phone: a.phone, zone: a.zone || null, active: a.active, avg_eta_min: a.avg_eta_min,
+    }).select().single();
+    if (!error && data) setAgents((prev) => [...prev, data as any]);
+  };
+
+  const updateAgent = async (a: Agent) => {
+    const { error } = await supabase.from("agents").update({
+      name: a.name, phone: a.phone, zone: a.zone, active: a.active, avg_eta_min: a.avg_eta_min,
+    }).eq("id", a.id);
+    if (!error) setAgents((prev) => prev.map((x) => (x.id === a.id ? a : x)));
+  };
+
+  const removeAgent = async (id: string) => {
+    const { error } = await supabase.from("agents").delete().eq("id", id);
+    if (!error) setAgents((prev) => prev.filter((x) => x.id !== id));
   };
 
   return (
-    <AppContext.Provider value={{ orders, services, servicesLoading, ordersLoading, addOrder, updateOrderStatus, updateService, addService, removeService, refreshServices: fetchServices, refreshOrders: fetchOrders }}>
+    <AppContext.Provider value={{
+      orders, services, agents, servicesLoading, ordersLoading,
+      addOrder, updateOrderStatus, assignAgent,
+      updateService, addService, removeService,
+      addAgent, updateAgent, removeAgent,
+      refreshServices: fetchServices, refreshOrders: fetchOrders, refreshAgents: fetchAgents,
+    }}>
       {children}
     </AppContext.Provider>
   );
