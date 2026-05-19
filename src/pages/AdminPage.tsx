@@ -181,10 +181,10 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 const ADMIN_WHATSAPP = "22788082987";
 const CHART_COLORS = ["hsl(215, 80%, 48%)", "hsl(155, 60%, 42%)", "hsl(38, 92%, 50%)", "hsl(0, 84%, 60%)", "hsl(270, 60%, 50%)", "hsl(190, 70%, 45%)"];
 
-type TabKey = "dashboard" | "orders" | "clients" | "users" | "notifications" | "receipts" | "accounting" | "services" | "promos" | "data";
+type TabKey = "dashboard" | "orders" | "agents" | "clients" | "users" | "notifications" | "receipts" | "accounting" | "services" | "promos" | "data";
 
 const AdminPage = () => {
-  const { orders, updateOrderStatus, services, updateService, addService, removeService } = useAppState();
+  const { orders, updateOrderStatus, assignAgent, agents, addAgent, updateAgent, removeAgent, services, updateService, addService, removeService } = useAppState();
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabKey>("dashboard");
 
