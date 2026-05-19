@@ -303,7 +303,8 @@ const AdminPage = () => {
         <div className="mt-5">
           <AnimatePresence mode="wait">
             {tab === "dashboard" && <DashboardTab key="dash" orders={orders} totalRevenue={totalRevenue} />}
-            {tab === "orders" && <OrdersTab key="ord" orders={orders} updateOrderStatus={updateOrderStatus} />}
+            {tab === "orders" && <OrdersTab key="ord" orders={orders} updateOrderStatus={updateOrderStatus} agents={agents} assignAgent={assignAgent} />}
+            {tab === "agents" && <AgentsTab key="agt" agents={agents} addAgent={addAgent} updateAgent={updateAgent} removeAgent={removeAgent} />}
             {tab === "clients" && <ClientsTab key="cli" orders={orders} />}
             {tab === "users" && <UsersTab key="usr" />}
             {tab === "notifications" && <NotificationsTab key="notif" orders={orders} />}
