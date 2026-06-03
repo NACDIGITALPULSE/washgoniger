@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ServiceOption, Order, SelectedOptionWithQty, PromoCode } from "@/lib/services";
 import { useAppState } from "@/lib/store";
+import { useAuth } from "@/hooks/useAuth";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
