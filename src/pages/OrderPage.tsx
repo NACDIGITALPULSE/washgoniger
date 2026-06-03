@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ServiceOption, Order, SelectedOptionWithQty, PromoCode } from "@/lib/services";
 import { useAppState } from "@/lib/store";
@@ -20,13 +20,14 @@ const OrderPage = () => {
   const { serviceId } = useParams();
   const navigate = useNavigate();
   const { addOrder, services } = useAppState();
+  const { profile } = useAuth();
   const service = services.find((s) => s.id === serviceId);
 
   const [selectedOptions, setSelectedOptions] = useState<Map<string, SelectedOptionWithQty>>(new Map());
   const [location, setLocation] = useState<"sur_place" | "domicile">("sur_place");
   const [payment, setPayment] = useState<"cash" | "nita" | "amanata">("cash");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [name, setName] = useState(profile?.full_name || "");
+  const [phone, setPhone] = useState(profile?.phone || "");
   const [address, setAddress] = useState("");
   const [gettingLocation, setGettingLocation] = useState(false);
   const [savedLocation, setSavedLocation] = useState<GeoPos | null>(null);
@@ -34,6 +35,12 @@ const OrderPage = () => {
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [whatsappFallback, setWhatsappFallback] = useState<{ text: string; phone: string; order?: Order } | null>(null);
+
+  useEffect(() => {
+    if (profile?.full_name && !name) setName(profile.full_name);
+    if (profile?.phone && !phone) setPhone(profile.phone);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile]);
 
   if (!service) return <div className="p-8 text-center text-muted-foreground">Service introuvable</div>;
 
@@ -196,9 +203,7 @@ const OrderPage = () => {
 
     await addOrder(order);
 
-    if (appliedPromo) {
-      await supabase.from("promo_codes").update({ used_count: appliedPromo.used_count + 1 }).eq("id", appliedPromo.id);
-    }
+    // promo_codes.used_count is maintained admin-side (RLS denies client updates)
 
     localStorage.setItem("washgo_phone", phone);
 

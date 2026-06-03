@@ -119,11 +119,11 @@ const TrackingPage = () => {
     return () => { supabase.removeChannel(channel); };
   }, [order?.id]);
 
-  // Load agent details when assigned
+  // Load agent details (public view — no phone)
   useEffect(() => {
     if (!order?.agentId) { setAgent(null); return; }
-    supabase.from("agents").select("*").eq("id", order.agentId).maybeSingle().then(({ data }) => {
-      if (data) setAgent(data as any);
+    (supabase as any).from("agents_public").select("*").eq("id", order.agentId).maybeSingle().then(({ data }: any) => {
+      if (data) setAgent({ ...data, phone: "" } as any);
     });
   }, [order?.agentId]);
 
@@ -221,11 +221,8 @@ const TrackingPage = () => {
                       {agent.zone ? `Zone ${agent.zone} · ` : ""}≈ {order.agentEtaMin ?? agent.avg_eta_min} min
                     </div>
                   </div>
-                  <a href={`tel:${agent.phone}`} className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Phone className="w-4 h-4 text-primary" />
-                  </a>
                   <a
-                    href={`https://wa.me/${agent.phone.replace(/\D/g, "")}`}
+                    href={`https://wa.me/22788082987?text=${encodeURIComponent('Bonjour, ma commande ' + (order.orderNumber || order.id) + ' — agent ' + agent.name)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-9 h-9 rounded-xl bg-[#25D366]/15 flex items-center justify-center"
