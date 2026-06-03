@@ -250,9 +250,6 @@ const ServiceSection = ({ title, emoji, services, onSeeAll, onServiceClick, dela
         >
           <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full bg-primary/5 blur-xl group-hover:bg-primary/15 transition-colors" />
           <div className="relative">
-            <div className="w-12 h-12 rounded-2xl hero-gradient flex items-center justify-center text-2xl mb-3 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-transform">
-              {service.icon}
-            </div>
             <h3 className="font-bold text-foreground text-sm mb-1 leading-tight">{service.name}</h3>
             <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2 mb-2">{service.description}</p>
             <div className="flex items-center justify-between">
