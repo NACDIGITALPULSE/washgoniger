@@ -78,41 +78,30 @@ const OrderPage = () => {
   const applyPromoCode = async () => {
     if (!promoInput.trim()) return;
     setPromoLoading(true);
-    const { data, error } = await supabase
-      .from("promo_codes")
-      .select("*")
-      .eq("code", promoInput.trim().toUpperCase())
-      .eq("active", true)
-      .maybeSingle();
-
-    if (error || !data) {
-      toast.error("Code promo invalide");
-      setAppliedPromo(null);
-      setPromoLoading(false);
-      return;
-    }
-
-    if (data.max_uses && data.used_count >= data.max_uses) {
-      toast.error("Ce code promo a expiré (utilisation max atteinte)");
-      setPromoLoading(false);
-      return;
-    }
-
-    if (data.expires_at && new Date(data.expires_at) < new Date()) {
-      toast.error("Ce code promo a expiré");
-      setPromoLoading(false);
-      return;
-    }
-
-    if (data.min_order > subtotal) {
-      toast.error(`Commande minimum de ${data.min_order.toLocaleString("fr-FR")} FCFA requise`);
-      setPromoLoading(false);
-      return;
-    }
-
-    setAppliedPromo(data as PromoCode);
-    toast.success(`Code promo appliqué ! -${data.discount_type === "percentage" ? data.discount_value + "%" : data.discount_value.toLocaleString("fr-FR") + " FCFA"}`);
+    const { data, error } = await supabase.rpc("validate_promo", {
+      _code: promoInput.trim(),
+      _order_total: subtotal,
+    } as any);
     setPromoLoading(false);
+    const res = data as any;
+    if (error || !res?.valid) {
+      toast.error(res?.message || "Code promo invalide");
+      setAppliedPromo(null);
+      return;
+    }
+    setAppliedPromo({
+      id: "rpc",
+      code: res.code,
+      discount_type: res.discount_type,
+      discount_value: Number(res.discount_value),
+      min_order: 0,
+      max_uses: null,
+      used_count: 0,
+      active: true,
+      expires_at: null,
+      created_at: new Date().toISOString(),
+    } as any);
+    toast.success(`Code appliqué ! -${res.discount.toLocaleString("fr-FR")} FCFA`);
   };
 
   const removePromo = () => {
