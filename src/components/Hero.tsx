@@ -189,30 +189,10 @@ const Hero = () => {
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </div>
         </motion.div>
-      </div>
-
-      {/* Services sections */}
-      <div className="relative container max-w-lg mx-auto px-5 space-y-6 pb-8">
-        <ServiceSection
-          title="Services Auto"
-          emoji="🚗"
-          services={autoServices}
-          onSeeAll={() => navigate("/services/auto")}
-          onServiceClick={(id) => navigate(`/order/${id}`)}
-          delay={0.3}
-        />
-        <ServiceSection
-          title="Pressing"
-          emoji="👕"
-          services={pressingServices}
-          onSeeAll={() => navigate("/services/pressing")}
-          onServiceClick={(id) => navigate(`/order/${id}`)}
-          delay={0.4}
-        />
-      </div>
     </section>
   );
 };
+
 
 /* ── Service Section ── */
 interface ServiceSectionProps {
