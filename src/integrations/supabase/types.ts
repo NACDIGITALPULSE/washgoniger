@@ -54,6 +54,7 @@ export type Database = {
           order_id: string | null
           points: number
           source: string
+          user_id: string | null
           user_phone: string
         }
         Insert: {
@@ -62,6 +63,7 @@ export type Database = {
           order_id?: string | null
           points?: number
           source?: string
+          user_id?: string | null
           user_phone: string
         }
         Update: {
@@ -70,6 +72,7 @@ export type Database = {
           order_id?: string | null
           points?: number
           source?: string
+          user_id?: string | null
           user_phone?: string
         }
         Relationships: [
@@ -105,6 +108,7 @@ export type Database = {
           service_name: string
           status: string
           total: number
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -128,6 +132,7 @@ export type Database = {
           service_name: string
           status?: string
           total?: number
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -151,6 +156,7 @@ export type Database = {
           service_name?: string
           status?: string
           total?: number
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -158,6 +164,13 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents_public"
             referencedColumns: ["id"]
           },
         ]
@@ -183,6 +196,33 @@ export type Database = {
           order_id?: string
           receipt_url?: string
           uploaded_by?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -275,7 +315,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      agents_public: {
+        Row: {
+          active: boolean | null
+          avg_eta_min: number | null
+          created_at: string | null
+          current_location: Json | null
+          id: string | null
+          name: string | null
+          zone: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          avg_eta_min?: number | null
+          created_at?: string | null
+          current_location?: Json | null
+          id?: string | null
+          name?: string | null
+          zone?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          avg_eta_min?: number | null
+          created_at?: string | null
+          current_location?: Json | null
+          id?: string | null
+          name?: string | null
+          zone?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -284,6 +353,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      validate_promo: {
+        Args: { _code: string; _order_total: number }
+        Returns: Json
       }
     }
     Enums: {

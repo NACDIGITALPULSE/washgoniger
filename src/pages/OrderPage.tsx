@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ServiceOption, Order, SelectedOptionWithQty, PromoCode } from "@/lib/services";
 import { useAppState } from "@/lib/store";
+import { useAuth } from "@/hooks/useAuth";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
@@ -20,13 +21,14 @@ const OrderPage = () => {
   const { serviceId } = useParams();
   const navigate = useNavigate();
   const { addOrder, services } = useAppState();
+  const { profile } = useAuth();
   const service = services.find((s) => s.id === serviceId);
 
   const [selectedOptions, setSelectedOptions] = useState<Map<string, SelectedOptionWithQty>>(new Map());
   const [location, setLocation] = useState<"sur_place" | "domicile">("sur_place");
   const [payment, setPayment] = useState<"cash" | "nita" | "amanata">("cash");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [name, setName] = useState(profile?.full_name || "");
+  const [phone, setPhone] = useState(profile?.phone || "");
   const [address, setAddress] = useState("");
   const [gettingLocation, setGettingLocation] = useState(false);
   const [savedLocation, setSavedLocation] = useState<GeoPos | null>(null);
@@ -34,6 +36,12 @@ const OrderPage = () => {
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [whatsappFallback, setWhatsappFallback] = useState<{ text: string; phone: string; order?: Order } | null>(null);
+
+  useEffect(() => {
+    if (profile?.full_name && !name) setName(profile.full_name);
+    if (profile?.phone && !phone) setPhone(profile.phone);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile]);
 
   if (!service) return <div className="p-8 text-center text-muted-foreground">Service introuvable</div>;
 
@@ -78,41 +86,30 @@ const OrderPage = () => {
   const applyPromoCode = async () => {
     if (!promoInput.trim()) return;
     setPromoLoading(true);
-    const { data, error } = await supabase
-      .from("promo_codes")
-      .select("*")
-      .eq("code", promoInput.trim().toUpperCase())
-      .eq("active", true)
-      .maybeSingle();
-
-    if (error || !data) {
-      toast.error("Code promo invalide");
-      setAppliedPromo(null);
-      setPromoLoading(false);
-      return;
-    }
-
-    if (data.max_uses && data.used_count >= data.max_uses) {
-      toast.error("Ce code promo a expiré (utilisation max atteinte)");
-      setPromoLoading(false);
-      return;
-    }
-
-    if (data.expires_at && new Date(data.expires_at) < new Date()) {
-      toast.error("Ce code promo a expiré");
-      setPromoLoading(false);
-      return;
-    }
-
-    if (data.min_order > subtotal) {
-      toast.error(`Commande minimum de ${data.min_order.toLocaleString("fr-FR")} FCFA requise`);
-      setPromoLoading(false);
-      return;
-    }
-
-    setAppliedPromo(data as PromoCode);
-    toast.success(`Code promo appliqué ! -${data.discount_type === "percentage" ? data.discount_value + "%" : data.discount_value.toLocaleString("fr-FR") + " FCFA"}`);
+    const { data, error } = await supabase.rpc("validate_promo", {
+      _code: promoInput.trim(),
+      _order_total: subtotal,
+    } as any);
     setPromoLoading(false);
+    const res = data as any;
+    if (error || !res?.valid) {
+      toast.error(res?.message || "Code promo invalide");
+      setAppliedPromo(null);
+      return;
+    }
+    setAppliedPromo({
+      id: "rpc",
+      code: res.code,
+      discount_type: res.discount_type,
+      discount_value: Number(res.discount_value),
+      min_order: 0,
+      max_uses: null,
+      used_count: 0,
+      active: true,
+      expires_at: null,
+      created_at: new Date().toISOString(),
+    } as any);
+    toast.success(`Code appliqué ! -${res.discount.toLocaleString("fr-FR")} FCFA`);
   };
 
   const removePromo = () => {
@@ -207,9 +204,7 @@ const OrderPage = () => {
 
     await addOrder(order);
 
-    if (appliedPromo) {
-      await supabase.from("promo_codes").update({ used_count: appliedPromo.used_count + 1 }).eq("id", appliedPromo.id);
-    }
+    // promo_codes.used_count is maintained admin-side (RLS denies client updates)
 
     localStorage.setItem("washgo_phone", phone);
 

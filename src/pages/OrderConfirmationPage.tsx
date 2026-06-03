@@ -48,14 +48,14 @@ const OrderConfirmationPage = () => {
     );
   });
 
-  // Load agent if assigned
+  // Load agent (public view — no phone)
   useEffect(() => {
     if (!order?.agentId) {
       setAgent(null);
       return;
     }
-    supabase.from("agents").select("*").eq("id", order.agentId).maybeSingle().then(({ data }) => {
-      if (data) setAgent(data as any);
+    (supabase as any).from("agents_public").select("*").eq("id", order.agentId).maybeSingle().then(({ data }: any) => {
+      if (data) setAgent({ ...data, phone: "" } as any);
     });
   }, [order?.agentId]);
 

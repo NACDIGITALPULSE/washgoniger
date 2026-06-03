@@ -115,8 +115,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       ? { ...order.selectedOption, options: order.selectedOptions }
       : order.selectedOption;
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Vous devez être connecté pour commander");
+
     const { error } = await supabase.from("orders").insert({
       id: order.id,
+      user_id: user.id,
       order_number: order.orderNumber || null,
       client_name: order.clientName,
       client_phone: order.clientPhone,
@@ -128,19 +132,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       location: order.location,
       address: order.address || null,
       payment: order.payment,
-      status: order.status,
+      status: "pending",
       total: order.total,
       promo_code: order.promoCode || null,
       discount: order.discount || 0,
-    });
+    } as any);
     if (!error) {
       setOrders((prev) => [order, ...prev]);
       await supabase.from("loyalty_points").insert({
+        user_id: user.id,
         user_phone: order.clientPhone,
         points: 10,
         source: "order",
         order_id: order.id,
-      });
+      } as any);
+    } else {
+      throw error;
     }
   };
 
