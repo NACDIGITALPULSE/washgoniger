@@ -45,8 +45,21 @@ const AuthPage = () => {
       return;
     }
     setLoading(true);
+    const normalized = normalizePhone(phRes.data);
+
+    // Résout l'email réel (couvre les comptes legacy créés en email/mot de passe)
+    let emailToUse = phoneToEmail(normalized);
+    try {
+      const { data } = await supabase.functions.invoke("resolve-phone-login", {
+        body: { phone: normalized },
+      });
+      if (data?.email) emailToUse = data.email;
+    } catch {
+      /* fallback to internal email */
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
-      email: phoneToEmail(phRes.data),
+      email: emailToUse,
       password: pRes.data,
     });
     setLoading(false);
@@ -55,6 +68,21 @@ const AuthPage = () => {
       return;
     }
     toast.success("Bienvenue !");
+  };
+
+  const sendWelcomeWhatsApp = (phoneDigits: string, name: string) => {
+    const intl = phoneDigits.startsWith("227") ? phoneDigits : `227${phoneDigits}`;
+    const msg =
+      `Bonjour ${name} 👋\n\n` +
+      `Votre compte WashGo Niger a bien été créé avec le numéro +${intl}. ✅\n\n` +
+      `Pour passer une commande :\n` +
+      `1️⃣ Ouvrez l'application WashGo\n` +
+      `2️⃣ Choisissez un service (Auto ou Pressing)\n` +
+      `3️⃣ Sélectionnez vos options et la livraison\n` +
+      `4️⃣ Validez le paiement (Cash, Nita ou Amanata)\n\n` +
+      `Besoin d'aide ? Répondez à ce message.`;
+    const url = `https://wa.me/${intl}?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -91,7 +119,8 @@ const AuthPage = () => {
       }
       return;
     }
-    toast.success("Compte créé ! 🎉");
+    toast.success("Compte créé ! 🎉 Ouverture de WhatsApp pour confirmation...");
+    sendWelcomeWhatsApp(normalized, fullName);
   };
 
   return (
