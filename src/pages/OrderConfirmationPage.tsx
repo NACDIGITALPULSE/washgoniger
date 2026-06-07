@@ -26,6 +26,7 @@ const OrderConfirmationPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const initial = location.state?.order as Order | undefined;
+  const adminWA = location.state?.adminWhatsApp as { phone: string; message: string } | undefined;
   const [order, setOrder] = useState<Order | undefined>(initial);
   const [agent, setAgent] = useState<Agent | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -220,8 +221,22 @@ const OrderConfirmationPage = () => {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
           className="text-center text-muted-foreground text-sm mt-1 mb-4"
         >
-          L'admin a été notifié sur WhatsApp.
+          Notifiez l'admin sur WhatsApp pour valider votre commande.
         </motion.p>
+
+        {adminWA && (
+          <motion.a
+            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
+            href={`https://wa.me/${adminWA.phone}?text=${encodeURIComponent(adminWA.message)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mb-5 mx-auto max-w-sm flex items-center justify-center gap-2 h-12 px-5 rounded-2xl bg-[#25D366] hover:bg-[#1ebe5d] text-white font-bold shadow-lg active:scale-[0.98] transition-transform"
+          >
+            <MessageCircle className="w-5 h-5" />
+            Notifier l'admin sur WhatsApp
+          </motion.a>
+        )}
+
 
         {/* Order number + live status chip */}
         <motion.div
