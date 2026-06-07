@@ -119,7 +119,8 @@ const AuthPage = () => {
       }
       return;
     }
-    toast.success("Compte créé ! 🎉");
+    toast.success("Compte créé ! 🎉 Ouverture de WhatsApp pour confirmation...");
+    sendWelcomeWhatsApp(normalized, fullName);
   };
 
   return (
