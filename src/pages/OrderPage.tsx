@@ -137,43 +137,11 @@ const OrderPage = () => {
     );
   };
 
-  const openWhatsAppSafely = async (url: string, text: string, phone: string, pendingWindow?: Window | null, order?: Order) => {
-    if (pendingWindow && !pendingWindow.closed) {
-      pendingWindow.location.replace(url);
-      pendingWindow.focus();
-      return true;
-    }
-
-    const popup = window.open(url, "_blank", "noopener,noreferrer");
-    if (popup) {
-      popup.focus();
-      return true;
-    }
-
-    // Bloqué — fallback
-    if (pendingWindow && !pendingWindow.closed) {
-      pendingWindow.close();
-    }
-
-    try {
-      await navigator.clipboard.writeText(text);
-      setWhatsappFallback({ text, phone, order });
-      toast.info("WhatsApp bloqué. Le message a été copié.");
-    } catch {
-      setWhatsappFallback({ text, phone, order });
-      toast.info("WhatsApp bloqué. Utilisez le fallback ci-dessous.");
-    }
-
-    return false;
-  };
-
   const handleSubmit = async () => {
     if (selectedOptions.size === 0 || !name || !phone) {
       toast.error("Veuillez remplir tous les champs et choisir au moins une option");
       return;
     }
-
-    const pendingWhatsAppWindow = window.open("", "_blank", "noopener,noreferrer");
 
     const optionsArray = Array.from(selectedOptions.values());
     const firstOpt = optionsArray[0];
@@ -202,13 +170,17 @@ const OrderPage = () => {
       discount,
     };
 
-    await addOrder(order);
-
-    // promo_codes.used_count is maintained admin-side (RLS denies client updates)
+    try {
+      await addOrder(order);
+    } catch (err) {
+      toast.error("Erreur lors de l'enregistrement de la commande");
+      return;
+    }
 
     localStorage.setItem("washgo_phone", phone);
 
-    // WhatsApp notification to admin (combine order + receipt + saved location)
+    // Build admin WhatsApp message — the confirmation page exposes a one-click button
+    // (synchronous user gesture → no popup blocker).
     const optionsText = optionsArray.map(o => `• ${o.option.name} ×${o.quantity}${o.option.unit === "kg" ? " kg" : ""} — ${(o.option.price * o.quantity).toLocaleString("fr-FR")} F`).join("\n");
     const locationText = location === "domicile" ? `🏠 Domicile${address ? ` — ${address}` : ""}` : "🏪 Sur place";
     const payLabel = paymentMethods.find(p => p.id === payment)?.label || payment;
@@ -225,16 +197,14 @@ const OrderPage = () => {
       `💰 *Total: ${total.toLocaleString("fr-FR")} FCFA*\n` +
       `📍 ${locationText}\n💳 ${payLabel}` +
       `${mapLine}\n\n— Reçu envoyé au client —`;
-    const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(adminMsg)}`;
-    const success = await openWhatsAppSafely(whatsappUrl, adminMsg, ADMIN_WHATSAPP, pendingWhatsAppWindow, order);
 
-    if (!success) {
-      // Fallback actif — ne pas naviguer, l'utilisateur verra le panneau fallback
-      return;
-    }
-
-    toast.success("Commande envoyée ! 🎉");
-    navigate("/order-confirmation", { state: { order } });
+    toast.success("Commande enregistrée ! 🎉");
+    navigate("/order-confirmation", {
+      state: {
+        order,
+        adminWhatsApp: { phone: ADMIN_WHATSAPP, message: adminMsg },
+      },
+    });
   };
 
   const paymentMethods = [
