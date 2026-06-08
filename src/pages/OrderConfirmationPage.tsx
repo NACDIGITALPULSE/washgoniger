@@ -27,6 +27,7 @@ const OrderConfirmationPage = () => {
   const navigate = useNavigate();
   const initial = location.state?.order as Order | undefined;
   const adminWA = location.state?.adminWhatsApp as { phone: string; message: string } | undefined;
+  const clientWAInit = location.state?.clientWhatsApp as { phone: string; message: string } | undefined;
   const [order, setOrder] = useState<Order | undefined>(initial);
   const [agent, setAgent] = useState<Agent | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
