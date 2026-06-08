@@ -179,7 +179,7 @@ const OrderPage = () => {
 
     localStorage.setItem("washgo_phone", phone);
 
-    // Build admin WhatsApp message — the confirmation page exposes a one-click button
+    // Build WhatsApp messages — the confirmation page exposes one-click buttons
     // (synchronous user gesture → no popup blocker).
     const optionsText = optionsArray.map(o => `• ${o.option.name} ×${o.quantity}${o.option.unit === "kg" ? " kg" : ""} — ${(o.option.price * o.quantity).toLocaleString("fr-FR")} F`).join("\n");
     const locationText = location === "domicile" ? `🏠 Domicile${address ? ` — ${address}` : ""}` : "🏪 Sur place";
@@ -188,6 +188,8 @@ const OrderPage = () => {
       ? `\n📍 *Position GPS:* https://www.google.com/maps?q=${savedLocation.lat},${savedLocation.lng}`
       : "";
     const promoLine = appliedPromo ? `\n🏷️ Code: ${appliedPromo.code} (-${discount.toLocaleString("fr-FR")} F)` : "";
+    const heureSouhaitee = now.toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
     const adminMsg =
       `🧾 *Nouvelle commande WashGo Niger*\n\n` +
       `📋 N° ${orderNumber}\n` +
@@ -198,11 +200,34 @@ const OrderPage = () => {
       `📍 ${locationText}\n💳 ${payLabel}` +
       `${mapLine}\n\n— Reçu envoyé au client —`;
 
+    // Personalized message for the client — confirms reception and includes all key details
+    const clientMsg =
+      `✅ *Confirmation WashGo Niger*\n\n` +
+      `Bonjour ${name}, votre commande est bien reçue !\n\n` +
+      `📋 *N°:* ${orderNumber}\n` +
+      `📞 *Client:* ${phone}\n` +
+      `🔧 *Service:* ${service.icon} ${service.name}\n${optionsText}\n` +
+      `📍 *Adresse / Zone:* ${locationText}\n` +
+      `🕒 *Heure souhaitée:* ${heureSouhaitee}\n` +
+      `💳 *Paiement:* ${payLabel}${promoLine}\n` +
+      `💰 *Total à payer:* ${total.toLocaleString("fr-FR")} FCFA\n\n` +
+      `📡 *Statut actuel:* ⏳ En attente\n` +
+      `Vous serez notifié dès que votre commande sera *acceptée*, *en cours* puis *terminée*.\n\n` +
+      `Merci pour votre confiance 💙`;
+
+    // Best-effort: open WhatsApp directly for the client (synchronous click → usually allowed)
+    const clientPhoneDigits = phone.replace(/\D/g, "");
+    const clientIntl = clientPhoneDigits.startsWith("227") ? clientPhoneDigits : `227${clientPhoneDigits}`;
+    try {
+      window.open(`https://wa.me/${clientIntl}?text=${encodeURIComponent(clientMsg)}`, "_blank");
+    } catch { /* fallback button on confirmation page */ }
+
     toast.success("Commande enregistrée ! 🎉");
     navigate("/order-confirmation", {
       state: {
         order,
         adminWhatsApp: { phone: ADMIN_WHATSAPP, message: adminMsg },
+        clientWhatsApp: { phone: clientIntl, message: clientMsg },
       },
     });
   };
