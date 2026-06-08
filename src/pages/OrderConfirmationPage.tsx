@@ -238,6 +238,30 @@ const OrderConfirmationPage = () => {
           </motion.a>
         )}
 
+        {clientWAInit && (() => {
+          const statusLine = `📡 *Statut actuel:* ${statusBadge[order.status]?.label || order.status}`;
+          // Rebuild the client message with the live status (sync from admin → client)
+          const updatedMsg = clientWAInit.message.replace(
+            /📡 \*Statut actuel:\*[^\n]*/,
+            statusLine
+          );
+          return (
+            <motion.a
+              key={order.status}
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              href={`https://wa.me/${clientWAInit.phone}?text=${encodeURIComponent(updatedMsg)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mb-5 mx-auto max-w-sm flex items-center justify-center gap-2 h-12 px-5 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg active:scale-[0.98] transition-transform"
+            >
+              <MessageCircle className="w-5 h-5" />
+              Recevoir ma confirmation WhatsApp
+            </motion.a>
+          );
+        })()}
+
+
+
 
         {/* Order number + live status chip */}
         <motion.div
