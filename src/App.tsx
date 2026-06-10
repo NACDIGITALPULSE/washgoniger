@@ -27,6 +27,8 @@ const App = () => (
     <ThemeProvider>
       <TooltipProvider>
         <Sonner />
+        <OfflineIndicator />
+        <SWUpdatePrompt />
         <BrowserRouter>
           <AuthProvider>
             <AppProvider>
