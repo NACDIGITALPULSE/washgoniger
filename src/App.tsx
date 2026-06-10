@@ -6,6 +6,8 @@ import { AppProvider } from "@/lib/store";
 import { AuthProvider } from "@/hooks/useAuth";
 import { RequireAuth } from "@/components/RequireAuth";
 import { ThemeProvider } from "@/hooks/use-theme";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { SWUpdatePrompt } from "@/components/SWUpdatePrompt";
 import Index from "./pages/Index";
 import ServicesPage from "./pages/ServicesPage";
 import OrderPage from "./pages/OrderPage";
@@ -25,6 +27,8 @@ const App = () => (
     <ThemeProvider>
       <TooltipProvider>
         <Sonner />
+        <OfflineIndicator />
+        <SWUpdatePrompt />
         <BrowserRouter>
           <AuthProvider>
             <AppProvider>
