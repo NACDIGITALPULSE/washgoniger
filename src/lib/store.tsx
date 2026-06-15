@@ -118,7 +118,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Vous devez être connecté pour commander");
 
-    const { error } = await supabase.from("orders").insert({
+    const orderRow = {
       id: order.id,
       user_id: user.id,
       order_number: order.orderNumber || null,
@@ -136,20 +136,46 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       total: order.total,
       promo_code: order.promoCode || null,
       discount: order.discount || 0,
-    } as any);
+    };
+
+    const loyaltyRow = {
+      user_id: user.id,
+      user_phone: order.clientPhone,
+      points: 10,
+      source: "order",
+      order_id: order.id,
+    };
+
+    // Offline → queue locally and sync automatically when connectivity returns.
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      const { enqueueOrder } = await import("@/lib/offlineQueue");
+      enqueueOrder({
+        orderRow,
+        loyaltyRow,
+        queuedAt: new Date().toISOString(),
+        orderNumber: order.orderNumber,
+      });
+      setOrders((prev) => [order, ...prev]);
+      return;
+    }
+
+    const { error } = await supabase.from("orders").insert(orderRow as any);
     if (!error) {
       setOrders((prev) => [order, ...prev]);
-      await supabase.from("loyalty_points").insert({
-        user_id: user.id,
-        user_phone: order.clientPhone,
-        points: 10,
-        source: "order",
-        order_id: order.id,
-      } as any);
+      await supabase.from("loyalty_points").insert(loyaltyRow as any);
     } else {
-      throw error;
+      // Network/DB failure → fall back to the offline queue so user never loses the order.
+      const { enqueueOrder } = await import("@/lib/offlineQueue");
+      enqueueOrder({
+        orderRow,
+        loyaltyRow,
+        queuedAt: new Date().toISOString(),
+        orderNumber: order.orderNumber,
+      });
+      setOrders((prev) => [order, ...prev]);
     }
   };
+
 
   const updateOrderStatus = async (id: string, status: Order["status"]) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
