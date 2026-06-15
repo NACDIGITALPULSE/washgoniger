@@ -22,3 +22,4 @@ requestAnimationFrame(() => {
 });
 
 registerSW();
+prefetchEssentials();
