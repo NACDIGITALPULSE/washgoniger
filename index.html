@@ -107,10 +107,7 @@
       #app-boot-loader .wg-bar::after { content: ""; position: absolute; top: 0; left: -40%; width: 40%; height: 100%; background: linear-gradient(90deg, transparent, #1a6dc2, transparent); animation: wg-slide 1.2s linear infinite; }
       @keyframes wg-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(.94); } }
       @keyframes wg-slide { to { left: 100%; } }
-      @media (prefers-color-scheme: dark) {
-        #app-boot-loader { background: #0b1220; }
-        #app-boot-loader .wg-title { color: #5fa8ff; }
-      }
+      /* Splash always white, even in dark mode */
     </style>
     <div id="app-boot-loader" role="status" aria-label="Chargement de l'application">
       <img src="/icon-192.png" alt="WashGo Niger" />
