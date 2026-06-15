@@ -240,7 +240,11 @@ const OrderPage = () => {
       window.open(`https://wa.me/${clientIntl}?text=${encodeURIComponent(clientMsg)}`, "_blank");
     } catch { /* fallback button on confirmation page */ }
 
-    toast.success("Commande enregistrée ! 🎉");
+    if (!navigator.onLine) {
+      toast.success("📴 Commande enregistrée hors connexion — synchronisation automatique dès le retour en ligne");
+    } else {
+      toast.success("Commande enregistrée ! 🎉");
+    }
     navigate("/order-confirmation", {
       state: {
         order,
