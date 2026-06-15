@@ -39,11 +39,27 @@ const OrderPage = () => {
   const [promoLoading, setPromoLoading] = useState(false);
   const [whatsappFallback, setWhatsappFallback] = useState<{ text: string; phone: string; order?: Order } | null>(null);
 
+  const isOnline = useNetworkStatus();
+  const [pending, setPending] = useState(() => pendingCount());
+
   useEffect(() => {
     if (profile?.full_name && !name) setName(profile.full_name);
     if (profile?.phone && !phone) setPhone(profile.phone);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
+
+  // Live pending-queue counter (updated by offlineQueue + on online events)
+  useEffect(() => {
+    const refresh = () => setPending(pendingCount());
+    window.addEventListener("washgo:pending-changed", refresh);
+    window.addEventListener("online", refresh);
+    window.addEventListener("offline", refresh);
+    return () => {
+      window.removeEventListener("washgo:pending-changed", refresh);
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("offline", refresh);
+    };
+  }, []);
 
   if (!service) return <div className="p-8 text-center text-muted-foreground">Service introuvable</div>;
 
