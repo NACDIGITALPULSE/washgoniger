@@ -282,6 +282,43 @@ const OrderPage = () => {
       </div>
 
       <div className="container max-w-lg mx-auto px-5 -mt-4 relative z-10 space-y-5">
+        {/* Offline / sync indicator */}
+        <AnimatePresence>
+          {!isOnline && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="rounded-2xl border-2 border-amber-300 bg-amber-50 text-amber-900 px-4 py-3 flex items-start gap-3 shadow-sm"
+              role="status"
+              aria-live="polite"
+            >
+              <CloudOff className="w-5 h-5 mt-0.5 shrink-0" />
+              <div className="text-xs leading-relaxed">
+                <div className="font-bold">Mode hors connexion</div>
+                <div>Les services affichés viennent du cache local. Votre commande sera enregistrée puis envoyée automatiquement dès le retour en ligne.</div>
+              </div>
+            </motion.div>
+          )}
+          {isOnline && pending > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="rounded-2xl border-2 border-blue-300 bg-blue-50 text-blue-900 px-4 py-3 flex items-center gap-3 shadow-sm"
+              role="status"
+              aria-live="polite"
+            >
+              <RefreshCw className="w-5 h-5 shrink-0 animate-spin" />
+              <div className="text-xs leading-relaxed">
+                <div className="font-bold">Synchronisation en cours…</div>
+                <div>{pending} commande{pending > 1 ? "s" : ""} en attente d'envoi au serveur.</div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+
         {/* Options */}
         <section className="glass-card rounded-2xl p-5">
           <h2 className="font-bold text-foreground mb-1 text-sm flex items-center gap-2">
