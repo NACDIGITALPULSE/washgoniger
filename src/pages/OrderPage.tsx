@@ -261,7 +261,7 @@ const OrderPage = () => {
   ];
 
   return (
-    <div className="min-h-screen pb-24 bg-background">
+    <div className="min-h-screen pb-24 bg-white">
       {/* Custom header */}
       <div className="hero-gradient px-5 pt-6 pb-8 relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_60%)]" />
