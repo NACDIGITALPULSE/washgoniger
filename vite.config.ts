@@ -57,6 +57,19 @@ export default defineConfig(({ mode }) => ({
               expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
+          {
+            // Cache Supabase REST GETs (services, orders, agents) for offline fallback
+            urlPattern: ({ url, request }) =>
+              request.method === "GET" &&
+              /\.supabase\.co$/.test(url.hostname) &&
+              url.pathname.startsWith("/rest/v1/"),
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "supabase-rest-cache",
+              expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 3 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
         ],
       },
     }),
