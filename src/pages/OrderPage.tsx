@@ -4,7 +4,7 @@ import { ServiceOption, Order, SelectedOptionWithQty, PromoCode } from "@/lib/se
 import { useAppState } from "@/lib/store";
 import { useAuth } from "@/hooks/useAuth";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { getPending, pendingCount } from "@/lib/offlineQueue";
+import { pendingCount } from "@/lib/offlineQueue";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
