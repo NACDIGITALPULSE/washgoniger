@@ -3,12 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ServiceOption, Order, SelectedOptionWithQty, PromoCode } from "@/lib/services";
 import { useAppState } from "@/lib/store";
 import { useAuth } from "@/hooks/useAuth";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { pendingCount } from "@/lib/offlineQueue";
 import PageHeader from "@/components/PageHeader";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation, Tag, Loader2, Share2, Copy, Download } from "lucide-react";
+import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation, Tag, Loader2, Share2, Copy, Download, WifiOff, RefreshCw, CloudOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadReceiptPDF } from "@/lib/receipt-pdf";
@@ -37,11 +39,27 @@ const OrderPage = () => {
   const [promoLoading, setPromoLoading] = useState(false);
   const [whatsappFallback, setWhatsappFallback] = useState<{ text: string; phone: string; order?: Order } | null>(null);
 
+  const isOnline = useNetworkStatus();
+  const [pending, setPending] = useState(() => pendingCount());
+
   useEffect(() => {
     if (profile?.full_name && !name) setName(profile.full_name);
     if (profile?.phone && !phone) setPhone(profile.phone);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
+
+  // Live pending-queue counter (updated by offlineQueue + on online events)
+  useEffect(() => {
+    const refresh = () => setPending(pendingCount());
+    window.addEventListener("washgo:pending-changed", refresh);
+    window.addEventListener("online", refresh);
+    window.addEventListener("offline", refresh);
+    return () => {
+      window.removeEventListener("washgo:pending-changed", refresh);
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("offline", refresh);
+    };
+  }, []);
 
   if (!service) return <div className="p-8 text-center text-muted-foreground">Service introuvable</div>;
 
@@ -222,7 +240,11 @@ const OrderPage = () => {
       window.open(`https://wa.me/${clientIntl}?text=${encodeURIComponent(clientMsg)}`, "_blank");
     } catch { /* fallback button on confirmation page */ }
 
-    toast.success("Commande enregistrée ! 🎉");
+    if (!navigator.onLine) {
+      toast.success("📴 Commande enregistrée hors connexion — synchronisation automatique dès le retour en ligne");
+    } else {
+      toast.success("Commande enregistrée ! 🎉");
+    }
     navigate("/order-confirmation", {
       state: {
         order,
@@ -239,7 +261,7 @@ const OrderPage = () => {
   ];
 
   return (
-    <div className="min-h-screen pb-24 bg-background">
+    <div className="min-h-screen pb-24 bg-white">
       {/* Custom header */}
       <div className="hero-gradient px-5 pt-6 pb-8 relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_60%)]" />
@@ -260,6 +282,43 @@ const OrderPage = () => {
       </div>
 
       <div className="container max-w-lg mx-auto px-5 -mt-4 relative z-10 space-y-5">
+        {/* Offline / sync indicator */}
+        <AnimatePresence>
+          {!isOnline && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="rounded-2xl border-2 border-amber-300 bg-amber-50 text-amber-900 px-4 py-3 flex items-start gap-3 shadow-sm"
+              role="status"
+              aria-live="polite"
+            >
+              <CloudOff className="w-5 h-5 mt-0.5 shrink-0" />
+              <div className="text-xs leading-relaxed">
+                <div className="font-bold">Mode hors connexion</div>
+                <div>Les services affichés viennent du cache local. Votre commande sera enregistrée puis envoyée automatiquement dès le retour en ligne.</div>
+              </div>
+            </motion.div>
+          )}
+          {isOnline && pending > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="rounded-2xl border-2 border-blue-300 bg-blue-50 text-blue-900 px-4 py-3 flex items-center gap-3 shadow-sm"
+              role="status"
+              aria-live="polite"
+            >
+              <RefreshCw className="w-5 h-5 shrink-0 animate-spin" />
+              <div className="text-xs leading-relaxed">
+                <div className="font-bold">Synchronisation en cours…</div>
+                <div>{pending} commande{pending > 1 ? "s" : ""} en attente d'envoi au serveur.</div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+
         {/* Options */}
         <section className="glass-card rounded-2xl p-5">
           <h2 className="font-bold text-foreground mb-1 text-sm flex items-center gap-2">
