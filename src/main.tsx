@@ -24,3 +24,4 @@ requestAnimationFrame(() => {
 
 registerSW();
 prefetchEssentials();
+initOfflineSync();
