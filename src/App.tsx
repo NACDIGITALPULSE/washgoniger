@@ -40,6 +40,7 @@ const App = () => (
                 <Route path="/order/:serviceId" element={<RequireAuth><OrderPage /></RequireAuth>} />
                 <Route path="/order-confirmation" element={<RequireAuth><OrderConfirmationPage /></RequireAuth>} />
                 <Route path="/my-orders" element={<RequireAuth><MyOrdersPage /></RequireAuth>} />
+                <Route path="/change-password" element={<RequireAuth><ChangePasswordPage /></RequireAuth>} />
                 <Route path="/tracking" element={<RequireAuth><TrackingPage /></RequireAuth>} />
                 <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
                 <Route path="/login" element={<AdminLoginPage />} />
