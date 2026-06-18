@@ -6,7 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import SEO from "@/components/SEO";
 import { motion } from "framer-motion";
-import { Package, Scale, Bell, Edit3, LogOut } from "lucide-react";
+import { Package, Scale, Bell, Edit3, LogOut, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Order } from "@/lib/services";
 import { toast } from "sonner";
