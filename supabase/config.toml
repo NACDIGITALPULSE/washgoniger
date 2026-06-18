@@ -1,1 +1,7 @@
 project_id = "ddtvbwugxvkszvweqkfa"
+
+[functions.request-password-reset]
+verify_jwt = false
+
+[functions.confirm-password-reset]
+verify_jwt = false
