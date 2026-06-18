@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import ServicesPage from "./pages/ServicesPage";
 import OrderPage from "./pages/OrderPage";
 import MyOrdersPage from "./pages/MyOrdersPage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminPage from "./pages/AdminPage";
