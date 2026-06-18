@@ -19,6 +19,8 @@ import AdminPage from "./pages/AdminPage";
 import TrackingPage from "./pages/TrackingPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import AuthPage from "./pages/AuthPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
