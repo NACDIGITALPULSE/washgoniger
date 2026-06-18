@@ -100,13 +100,23 @@ const MyOrdersPage = () => {
       <PageHeader title="📋 Mes Commandes" />
       <div className="container max-w-lg mx-auto px-4 py-6">
         {/* Profile card */}
-        <div className="glass-card rounded-2xl p-4 mb-6 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-bold text-foreground">{profile?.full_name || "Mon compte"}</p>
-            <p className="text-xs text-muted-foreground">{profile?.phone || user?.email}</p>
+        <div className="glass-card rounded-2xl p-4 mb-6">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-foreground truncate">{profile?.full_name || "Mon compte"}</p>
+              <p className="text-xs text-muted-foreground truncate">{profile?.phone || user?.email}</p>
+            </div>
+            <Button variant="outline" size="sm" className="rounded-xl text-xs shrink-0" onClick={async () => { await signOut(); navigate("/"); }}>
+              <LogOut className="w-3.5 h-3.5 mr-1" /> Déconnexion
+            </Button>
           </div>
-          <Button variant="outline" size="sm" className="rounded-xl text-xs" onClick={async () => { await signOut(); navigate("/"); }}>
-            <LogOut className="w-3.5 h-3.5 mr-1" /> Déconnexion
+          <Button
+            variant="ghost"
+            size="sm"
+            className="rounded-xl text-xs w-full mt-3 justify-start"
+            onClick={() => navigate("/change-password")}
+          >
+            <KeyRound className="w-3.5 h-3.5 mr-2" /> Modifier mon mot de passe
           </Button>
         </div>
 
