@@ -177,6 +177,11 @@ const AuthPage = () => {
                 <Button type="submit" variant="hero" size="lg" className="w-full rounded-xl h-12 font-bold" disabled={loading}>
                   {loading ? "Connexion..." : "Se connecter"}
                 </Button>
+                <div className="text-center pt-1">
+                  <Link to="/forgot-password" className="text-sm text-primary font-medium hover:underline">
+                    Mot de passe oublié ?
+                  </Link>
+                </div>
               </form>
             </TabsContent>
 
