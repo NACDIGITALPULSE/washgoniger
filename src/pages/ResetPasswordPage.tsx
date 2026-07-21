@@ -24,7 +24,9 @@ const ResetPasswordPage = () => {
 
   useEffect(() => {
     const p = params.get("phone");
+    const c = params.get("code");
     if (p) setPhone(p);
+    if (c && /^\d{6}$/.test(c)) setCode(c);
   }, [params]);
 
   const handleSubmit = async (e: React.FormEvent) => {

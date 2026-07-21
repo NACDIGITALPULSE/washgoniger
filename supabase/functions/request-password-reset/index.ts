@@ -89,8 +89,8 @@ Deno.serve(async (req) => {
 
     return json({
       success: true,
-      message:
-        "Demande enregistrée. Contactez notre support WhatsApp pour recevoir votre code.",
+      message: "Code généré. Envoyez-le vous sur WhatsApp puis saisissez-le.",
+      code,
       admin_whatsapp: "22788082987",
     });
   } catch (e) {
