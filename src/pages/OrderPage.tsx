@@ -62,6 +62,13 @@ const OrderPage = () => {
     };
   }, []);
 
+  // Preload iPay Money script when the user picks that payment method
+  useEffect(() => {
+    if (payment === "ipaymoney") {
+      import("@/lib/ipay").then((m) => m.loadIPayScript().catch(() => {}));
+    }
+  }, [payment]);
+
   if (!service) return <div className="p-8 text-center text-muted-foreground">Service introuvable</div>;
 
   const toggleOption = (opt: ServiceOption) => {
