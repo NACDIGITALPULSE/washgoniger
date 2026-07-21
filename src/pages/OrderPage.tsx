@@ -14,6 +14,7 @@ import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation, Tag,
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadReceiptPDF } from "@/lib/receipt-pdf";
+import { startIPayCheckout } from "@/lib/ipay";
 
 const ADMIN_WHATSAPP = "22788082987";
 
