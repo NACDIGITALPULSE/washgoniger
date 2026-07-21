@@ -241,12 +241,10 @@ const OrderPage = () => {
       `Vous serez notifié dès que votre commande sera *acceptée*, *en cours* puis *terminée*.\n\n` +
       `Merci pour votre confiance 💙`;
 
-    // Best-effort: open WhatsApp directly for the client (synchronous click → usually allowed)
+    // Keep the order flow inside the app. WhatsApp is exposed on the
+    // confirmation page as an explicit action to avoid browser/network blocks.
     const clientPhoneDigits = phone.replace(/\D/g, "");
     const clientIntl = clientPhoneDigits.startsWith("227") ? clientPhoneDigits : `227${clientPhoneDigits}`;
-    try {
-      window.open(`https://wa.me/${clientIntl}?text=${encodeURIComponent(clientMsg)}`, "_blank");
-    } catch { /* fallback button on confirmation page */ }
 
     if (!navigator.onLine) {
       toast.success("📴 Commande enregistrée hors connexion — synchronisation automatique dès le retour en ligne");
