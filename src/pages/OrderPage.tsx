@@ -246,6 +246,23 @@ const OrderPage = () => {
     } else {
       toast.success("Commande enregistrée ! 🎉");
     }
+    if (payment === "ipaymoney" && navigator.onLine) {
+      try {
+        toast.info("Redirection vers iPay Money…");
+        await startIPayCheckout({
+          orderId: order.id,
+          orderNumber,
+          amount: total,
+          phone,
+          fullName: name,
+          sandbox: false,
+        });
+        return; // iPay takes over; callback URL will bring the user back
+      } catch (err) {
+        toast.error("Impossible d'ouvrir iPay Money — commande enregistrée");
+      }
+    }
+
     navigate("/order-confirmation", {
       state: {
         order,
