@@ -16,6 +16,7 @@ const ForgotPasswordPage = () => {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [receivedCode, setReceivedCode] = useState<string | null>(null);
   const [adminWhatsapp, setAdminWhatsapp] = useState("22788082987");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,14 +36,24 @@ const ForgotPasswordPage = () => {
       return;
     }
     setAdminWhatsapp(data.admin_whatsapp || "22788082987");
+    setReceivedCode(data.code || null);
     setSent(true);
-    toast.success("Demande envoyée !");
+    toast.success("Code généré !");
   };
 
-  const openSupport = () => {
-    const digits = normalize(phone);
-    const msg = `Bonjour, j'ai oublié mon mot de passe WashGo Niger. Mon numéro : +${digits.startsWith("227") ? digits : "227" + digits}. Merci de m'envoyer mon code de vérification.`;
-    window.open(`https://wa.me/${adminWhatsapp}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
+  const clientDigits = normalize(phone);
+  const clientIntl = clientDigits.startsWith("227") ? clientDigits : `227${clientDigits}`;
+
+  const sendCodeToMyWhatsApp = () => {
+    if (!receivedCode) return;
+    const msg = `🔐 Votre code WashGo Niger : *${receivedCode}*\n\nValable 15 minutes. Ne le partagez avec personne.`;
+    window.open(`https://wa.me/${clientIntl}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
+  };
+
+  const continueToReset = () => {
+    const q = new URLSearchParams({ phone: clientDigits });
+    if (receivedCode) q.set("code", receivedCode);
+    navigate(`/reset-password?${q.toString()}`);
   };
 
   return (
@@ -78,7 +89,7 @@ const ForgotPasswordPage = () => {
           {!sent ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Entrez le numéro de téléphone associé à votre compte. Un code de vérification à 6 chiffres vous sera transmis par notre support WhatsApp.
+                Entrez le numéro de téléphone associé à votre compte. Un code de vérification à 6 chiffres sera généré et envoyé sur votre WhatsApp.
               </p>
               <div className="space-y-2">
                 <Label htmlFor="fphone">Téléphone</Label>
@@ -93,14 +104,17 @@ const ForgotPasswordPage = () => {
             </form>
           ) : (
             <div className="space-y-4">
-              <div className="rounded-2xl bg-success/10 border border-success/30 p-4 text-sm text-foreground">
-                ✅ Demande enregistrée. Contactez notre support WhatsApp pour recevoir votre code de vérification à 6 chiffres (valable 15 minutes).
-              </div>
-              <Button onClick={openSupport} variant="hero" size="lg" className="w-full rounded-xl h-12 font-bold">
-                <MessageCircle className="w-4 h-4 mr-2" /> Contacter le support WhatsApp
+              {receivedCode && (
+                <div className="rounded-2xl bg-primary/10 border border-primary/30 p-4 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Votre code (valable 15 min)</p>
+                  <p className="text-3xl font-extrabold tracking-widest text-primary">{receivedCode}</p>
+                </div>
+              )}
+              <Button onClick={sendCodeToMyWhatsApp} variant="hero" size="lg" className="w-full rounded-xl h-12 font-bold">
+                <MessageCircle className="w-4 h-4 mr-2" /> M'envoyer le code sur WhatsApp
               </Button>
-              <Button onClick={() => navigate(`/reset-password?phone=${encodeURIComponent(normalize(phone))}`)} variant="outline" size="lg" className="w-full rounded-xl h-12 font-bold">
-                J'ai reçu mon code → Continuer
+              <Button onClick={continueToReset} variant="outline" size="lg" className="w-full rounded-xl h-12 font-bold">
+                Continuer → Nouveau mot de passe
               </Button>
             </div>
           )}
