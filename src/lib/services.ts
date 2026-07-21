@@ -44,7 +44,7 @@ export interface Order {
   quantity: number;
   location: "sur_place" | "domicile";
   address?: string;
-  payment: "cash" | "nita" | "amanata";
+  payment: "cash" | "nita" | "amanata" | "ipaymoney";
   status: "pending" | "accepted" | "in_progress" | "ready" | "delivered" | "completed" | "cancelled";
   createdAt: Date;
   total: number;

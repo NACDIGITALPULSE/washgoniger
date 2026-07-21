@@ -99,6 +99,8 @@ export type Database = {
           location: string
           order_number: string | null
           payment: string
+          payment_ref: string | null
+          payment_status: string | null
           promo_code: string | null
           quantity: number
           receipt_url: string | null
@@ -123,6 +125,8 @@ export type Database = {
           location?: string
           order_number?: string | null
           payment?: string
+          payment_ref?: string | null
+          payment_status?: string | null
           promo_code?: string | null
           quantity?: number
           receipt_url?: string | null
@@ -147,6 +151,8 @@ export type Database = {
           location?: string
           order_number?: string | null
           payment?: string
+          payment_ref?: string | null
+          payment_status?: string | null
           promo_code?: string | null
           quantity?: number
           receipt_url?: string | null

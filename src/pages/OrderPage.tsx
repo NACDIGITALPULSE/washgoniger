@@ -14,6 +14,7 @@ import { MapPin, Phone, User, CheckCircle2, Minus, Plus, Scale, Navigation, Tag,
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadReceiptPDF } from "@/lib/receipt-pdf";
+import { startIPayCheckout } from "@/lib/ipay";
 
 const ADMIN_WHATSAPP = "22788082987";
 
@@ -28,7 +29,7 @@ const OrderPage = () => {
 
   const [selectedOptions, setSelectedOptions] = useState<Map<string, SelectedOptionWithQty>>(new Map());
   const [location, setLocation] = useState<"sur_place" | "domicile">("sur_place");
-  const [payment, setPayment] = useState<"cash" | "nita" | "amanata">("cash");
+  const [payment, setPayment] = useState<"cash" | "nita" | "amanata" | "ipaymoney">("cash");
   const [name, setName] = useState(profile?.full_name || "");
   const [phone, setPhone] = useState(profile?.phone || "");
   const [address, setAddress] = useState("");
@@ -60,6 +61,13 @@ const OrderPage = () => {
       window.removeEventListener("offline", refresh);
     };
   }, []);
+
+  // Preload iPay Money script when the user picks that payment method
+  useEffect(() => {
+    if (payment === "ipaymoney") {
+      import("@/lib/ipay").then((m) => m.loadIPayScript().catch(() => {}));
+    }
+  }, [payment]);
 
   if (!service) return <div className="p-8 text-center text-muted-foreground">Service introuvable</div>;
 
@@ -245,6 +253,23 @@ const OrderPage = () => {
     } else {
       toast.success("Commande enregistrée ! 🎉");
     }
+    if (payment === "ipaymoney" && navigator.onLine) {
+      try {
+        toast.info("Redirection vers iPay Money…");
+        await startIPayCheckout({
+          orderId: order.id,
+          orderNumber,
+          amount: total,
+          phone,
+          fullName: name,
+          sandbox: false,
+        });
+        return; // iPay takes over; callback URL will bring the user back
+      } catch (err) {
+        toast.error("Impossible d'ouvrir iPay Money — commande enregistrée");
+      }
+    }
+
     navigate("/order-confirmation", {
       state: {
         order,
@@ -255,9 +280,10 @@ const OrderPage = () => {
   };
 
   const paymentMethods = [
-    { id: "cash" as const, label: "Cash", emoji: "💵", desc: "Paiement en espèces" },
+    { id: "cash" as const, label: "Cash", emoji: "💵", desc: "Espèces" },
     { id: "nita" as const, label: "Nita", emoji: "📱", desc: "Mobile Money" },
     { id: "amanata" as const, label: "Amanata", emoji: "📱", desc: "Mobile Money" },
+    { id: "ipaymoney" as const, label: "iPay", emoji: "💳", desc: "Carte / Mobile" },
   ];
 
   return (
@@ -465,7 +491,7 @@ const OrderPage = () => {
           <p className="text-[11px] text-muted-foreground mb-3">
             Nita & Amanata via le <span className="font-bold text-primary">+227 88 08 29 87</span>
           </p>
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5">
             {paymentMethods.map((p) => (
               <button
                 key={p.id}
