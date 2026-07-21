@@ -28,7 +28,7 @@ const OrderPage = () => {
 
   const [selectedOptions, setSelectedOptions] = useState<Map<string, SelectedOptionWithQty>>(new Map());
   const [location, setLocation] = useState<"sur_place" | "domicile">("sur_place");
-  const [payment, setPayment] = useState<"cash" | "nita" | "amanata">("cash");
+  const [payment, setPayment] = useState<"cash" | "nita" | "amanata" | "ipaymoney">("cash");
   const [name, setName] = useState(profile?.full_name || "");
   const [phone, setPhone] = useState(profile?.phone || "");
   const [address, setAddress] = useState("");
@@ -255,9 +255,10 @@ const OrderPage = () => {
   };
 
   const paymentMethods = [
-    { id: "cash" as const, label: "Cash", emoji: "💵", desc: "Paiement en espèces" },
+    { id: "cash" as const, label: "Cash", emoji: "💵", desc: "Espèces" },
     { id: "nita" as const, label: "Nita", emoji: "📱", desc: "Mobile Money" },
     { id: "amanata" as const, label: "Amanata", emoji: "📱", desc: "Mobile Money" },
+    { id: "ipaymoney" as const, label: "iPay", emoji: "💳", desc: "Carte / Mobile" },
   ];
 
   return (
