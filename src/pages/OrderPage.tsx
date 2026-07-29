@@ -29,7 +29,7 @@ const OrderPage = () => {
 
   const [selectedOptions, setSelectedOptions] = useState<Map<string, SelectedOptionWithQty>>(new Map());
   const [location, setLocation] = useState<"sur_place" | "domicile">("sur_place");
-  const [payment, setPayment] = useState<"cash" | "nita" | "amanata" | "ipaymoney">("cash");
+  const [payment, setPayment] = useState<"cash" | "ipaymoney">("cash");
   const [name, setName] = useState(profile?.full_name || "");
   const [phone, setPhone] = useState(profile?.phone || "");
   const [address, setAddress] = useState("");
