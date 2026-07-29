@@ -469,7 +469,7 @@ const OrderPage = () => {
             💳 Mode de paiement
           </h2>
           <p className="text-[11px] text-muted-foreground mb-3">
-            Nita & Amanata via le <span className="font-bold text-primary">+227 88 08 29 87</span>
+            Payez en espèces à la livraison ou via iPay Money (carte / mobile)
           </p>
           <div className="grid grid-cols-2 gap-2.5">
             {paymentMethods.map((p) => (
