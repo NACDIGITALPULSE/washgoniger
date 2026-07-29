@@ -252,20 +252,9 @@ const OrderPage = () => {
       toast.success("Commande enregistrée ! 🎉");
     }
     if (payment === "ipaymoney" && navigator.onLine) {
-      try {
-        toast.info("Redirection vers iPay Money…");
-        await startIPayCheckout({
-          orderId: order.id,
-          orderNumber,
-          amount: total,
-          phone,
-          fullName: name,
-          sandbox: false,
-        });
-        return; // iPay takes over; callback URL will bring the user back
-      } catch (err) {
-        toast.error("Impossible d'ouvrir iPay Money — commande enregistrée");
-      }
+      toast.info("Redirection vers iPay Money…");
+      window.location.href = "https://i-pay.money/merchant_payment_desks/489661832415";
+      return;
     }
 
     navigate("/order-confirmation", {
