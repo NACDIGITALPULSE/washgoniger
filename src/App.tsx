@@ -8,6 +8,8 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { SWUpdatePrompt } from "@/components/SWUpdatePrompt";
+import { IPayReturnHandler } from "@/components/IPayReturnHandler";
+
 import Index from "./pages/Index";
 import ServicesPage from "./pages/ServicesPage";
 import OrderPage from "./pages/OrderPage";
@@ -35,8 +37,10 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <AppProvider>
+              <IPayReturnHandler />
               <Routes>
                 <Route path="/" element={<Index />} />
+
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
