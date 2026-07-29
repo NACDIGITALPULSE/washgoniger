@@ -278,10 +278,8 @@ const OrderPage = () => {
   };
 
   const paymentMethods = [
-    { id: "cash" as const, label: "Cash", emoji: "💵", desc: "Espèces" },
-    { id: "nita" as const, label: "Nita", emoji: "📱", desc: "Mobile Money" },
-    { id: "amanata" as const, label: "Amanata", emoji: "📱", desc: "Mobile Money" },
-    { id: "ipaymoney" as const, label: "iPay", emoji: "💳", desc: "Carte / Mobile" },
+    { id: "cash" as const, label: "Espèces", emoji: "💵", desc: "Paiement à la livraison" },
+    { id: "ipaymoney" as const, label: "iPay Money", emoji: "💳", desc: "Carte / Mobile Money" },
   ];
 
   return (
