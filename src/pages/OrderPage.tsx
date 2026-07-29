@@ -62,12 +62,7 @@ const OrderPage = () => {
     };
   }, []);
 
-  // Preload iPay Money script when the user picks that payment method
-  useEffect(() => {
-    if (payment === "ipaymoney") {
-      import("@/lib/ipay").then((m) => m.loadIPayScript().catch(() => {}));
-    }
-  }, [payment]);
+  // (iPay Money est déclenché via un lien de paiement direct, aucun SDK à précharger)
 
   if (!service) return <div className="p-8 text-center text-muted-foreground">Service introuvable</div>;
 
