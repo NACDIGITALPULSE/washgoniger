@@ -247,10 +247,23 @@ const OrderPage = () => {
       toast.success("Commande enregistrée ! 🎉");
     }
     if (payment === "ipaymoney" && navigator.onLine) {
+      // Persist order context so we can restore the confirmation screen when the user comes back from iPay
+      try {
+        localStorage.setItem(
+          "washgo_pending_ipay",
+          JSON.stringify({
+            order,
+            adminWhatsApp: { phone: ADMIN_WHATSAPP, message: adminMsg },
+            clientWhatsApp: { phone: clientIntl, message: clientMsg },
+            ts: Date.now(),
+          })
+        );
+      } catch {}
       toast.info("Redirection vers iPay Money…");
       window.location.href = "https://i-pay.money/merchant_payment_desks/489661832415";
       return;
     }
+
 
     navigate("/order-confirmation", {
       state: {
