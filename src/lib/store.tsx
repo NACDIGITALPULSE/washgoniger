@@ -112,6 +112,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return () => { supabase.removeChannel(ch); };
   }, [fetchAgents]);
 
+  // Realtime sync for orders (status + payment status live updates)
+  useEffect(() => {
+    const ch = supabase
+      .channel("orders-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
+        const row: any = (payload as any).new;
+        if (payload.eventType === "UPDATE" && row) {
+          setOrders((prev) => prev.map((o) => (o.id === row.id ? dbRowToOrder(row) : o)));
+        } else {
+          fetchOrders();
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [fetchOrders]);
+
+
   const addOrder = async (order: Order) => {
     const selectedOptionData = order.selectedOptions && order.selectedOptions.length > 0
       ? { ...order.selectedOption, options: order.selectedOptions }
