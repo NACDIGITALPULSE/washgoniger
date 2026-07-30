@@ -152,6 +152,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       address: order.address || null,
       payment: order.payment,
       status: "pending",
+      payment_status: order.payment === "ipaymoney" ? "pending" : "unpaid",
       total: order.total,
       promo_code: order.promoCode || null,
       discount: order.discount || 0,
