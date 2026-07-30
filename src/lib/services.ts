@@ -54,6 +54,8 @@ export interface Order {
   agentId?: string;
   agentEtaMin?: number;
   assignedAt?: Date;
+  paymentStatus?: "unpaid" | "pending" | "paid" | "failed";
+  paymentRef?: string;
 }
 
 export interface Agent {
