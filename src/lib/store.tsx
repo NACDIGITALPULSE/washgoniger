@@ -56,6 +56,8 @@ const dbRowToOrder = (row: any): Order => ({
   agentId: row.agent_id || undefined,
   agentEtaMin: row.agent_eta_min ?? undefined,
   assignedAt: row.assigned_at ? new Date(row.assigned_at) : undefined,
+  paymentStatus: (row.payment_status as any) || "unpaid",
+  paymentRef: row.payment_ref || undefined,
 });
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
