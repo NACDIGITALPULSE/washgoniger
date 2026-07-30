@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle2, Home, ClipboardList, Navigation, Download, Upload, FileCheck, Send, Phone, Clock, MapPin, CreditCard, Package, Hash, UserCheck, MessageCircle } from "lucide-react";
+import { CheckCircle2, Home, ClipboardList, Navigation, Download, Upload, FileCheck, Send, Phone, Clock, MapPin, CreditCard, Package, Hash, UserCheck, MessageCircle, XCircle, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Order, Agent } from "@/lib/services";
 import { toast } from "sonner";
@@ -11,6 +11,13 @@ import { WhatsAppShareFallback } from "@/components/WhatsAppShareFallback";
 import { useOrderRealtime } from "@/hooks/useOrderRealtime";
 
 const ADMIN_WHATSAPP = "22788082987";
+
+const paymentBadge: Record<string, { label: string; color: string }> = {
+  unpaid: { label: "Non payé", color: "bg-muted text-muted-foreground border-border" },
+  pending: { label: "Paiement en attente", color: "bg-warning/15 text-warning border-warning/30" },
+  paid: { label: "Payé", color: "bg-success/15 text-success border-success/30" },
+  failed: { label: "Paiement échoué", color: "bg-destructive/15 text-destructive border-destructive/30" },
+};
 
 const statusBadge: Record<string, { label: string; color: string }> = {
   pending: { label: "En attente", color: "bg-warning/15 text-warning border-warning/30" },
@@ -35,6 +42,8 @@ const OrderConfirmationPage = () => {
   const [receiptUploaded, setReceiptUploaded] = useState(false);
   const [whatsappFallback, setWhatsappFallback] = useState<{ text: string; phone: string; pdfUrl?: string } | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(false);
 
   // Realtime updates on this order
   useOrderRealtime(order?.id, (row) => {
@@ -43,6 +52,8 @@ const OrderConfirmationPage = () => {
         ? {
             ...prev,
             status: row.status,
+            paymentStatus: row.payment_status || "unpaid",
+            paymentRef: row.payment_ref || undefined,
             agentId: row.agent_id || undefined,
             agentEtaMin: row.agent_eta_min ?? undefined,
           }
@@ -60,6 +71,57 @@ const OrderConfirmationPage = () => {
       if (data) setAgent({ ...data, phone: "" } as any);
     });
   }, [order?.agentId]);
+
+  // Pull the authoritative status/payment state (e.g. after coming back from iPay)
+  const refreshOrder = async (silent = true) => {
+    if (!order?.id) return;
+    if (!silent) setCheckingPayment(true);
+    const { data } = await supabase
+      .from("orders")
+      .select("status,payment_status,payment_ref,agent_id,agent_eta_min")
+      .eq("id", order.id)
+      .maybeSingle();
+    if (data) {
+      setOrder((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: data.status as Order["status"],
+              paymentStatus: (data.payment_status as Order["paymentStatus"]) || "unpaid",
+              paymentRef: data.payment_ref || undefined,
+              agentId: data.agent_id || undefined,
+              agentEtaMin: data.agent_eta_min ?? undefined,
+            }
+          : prev
+      );
+      if (!silent) {
+        if (data.payment_status === "paid") toast.success("Paiement confirmé ✅");
+        else toast.info("Paiement pas encore confirmé");
+      }
+    }
+    setCheckingPayment(false);
+  };
+
+  useEffect(() => {
+    refreshOrder(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order?.id]);
+
+  const cancelOrder = async () => {
+    if (!order || cancelling) return;
+    setCancelling(true);
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "cancelled" })
+      .eq("id", order.id);
+    setCancelling(false);
+    if (error) {
+      toast.error("Impossible d'annuler cette commande");
+      return;
+    }
+    setOrder((prev) => (prev ? { ...prev, status: "cancelled" } : prev));
+    toast.success("Commande annulée");
+  };
 
   if (!order) {
     navigate("/");
@@ -194,6 +256,8 @@ const OrderConfirmationPage = () => {
   };
 
   const sBadge = statusBadge[order.status];
+  const payStatus = order.paymentStatus || "unpaid";
+  const pBadge = paymentBadge[payStatus] || paymentBadge.unpaid;
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -281,7 +345,39 @@ const OrderConfirmationPage = () => {
             <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
             <span className="text-[11px] font-bold">{sBadge.label}</span>
           </motion.div>
+          <motion.div
+            key={payStatus}
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${pBadge.color}`}
+          >
+            <CreditCard className="w-3 h-3" />
+            <span className="text-[11px] font-bold">{pBadge.label}</span>
+          </motion.div>
         </motion.div>
+
+        {/* Paiement non confirmé → vérifier ou annuler */}
+        {order.payment === "ipaymoney" && payStatus !== "paid" && order.status !== "cancelled" && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="rounded-[24px] p-4 glass-card border border-warning/40 backdrop-blur-xl mb-4"
+          >
+            <p className="text-sm font-semibold text-foreground mb-1">Paiement non confirmé</p>
+            <p className="text-[12px] text-muted-foreground mb-3">
+              Si vous avez déjà payé sur iPay Money, actualisez le statut. Sinon, vous pouvez annuler cette commande.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" className="rounded-2xl h-11" disabled={checkingPayment} onClick={() => refreshOrder(false)}>
+                {checkingPayment ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1.5" />}
+                Vérifier
+              </Button>
+              <Button variant="outline" className="rounded-2xl h-11 text-destructive border-destructive/30" disabled={cancelling} onClick={cancelOrder}>
+                {cancelling ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <XCircle className="w-4 h-4 mr-1.5" />}
+                Annuler
+              </Button>
+            </div>
+          </motion.div>
+        )}
 
         {/* ETA Card */}
         <motion.div

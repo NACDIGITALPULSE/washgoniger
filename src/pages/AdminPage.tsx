@@ -168,6 +168,13 @@ const statusActions: Record<string, { next: Order["status"]; label: string }> = 
   delivered: { next: "completed", label: "Terminer" },
 };
 
+const paymentStatusLabels: Record<string, { label: string; color: string }> = {
+  unpaid: { label: "Non payé", color: "bg-muted-foreground" },
+  pending: { label: "Paiement en attente", color: "bg-warning" },
+  paid: { label: "Payé", color: "bg-success" },
+  failed: { label: "Paiement échoué", color: "bg-destructive" },
+};
+
 const statusLabels: Record<string, { label: string; color: string }> = {
   pending: { label: "En attente", color: "bg-warning" },
   accepted: { label: "Acceptée", color: "bg-primary" },
@@ -790,6 +797,9 @@ const OrdersTab = ({ orders, updateOrderStatus, agents, assignAgent }: { orders:
                   <div className="text-[10px] text-muted-foreground">
                     {order.location === "domicile" ? `📍 ${order.address}` : "🏪 Sur place"} • {order.payment === "cash" ? "💵 Cash" : `💳 ${order.payment}`}
                   </div>
+                  <span className={`inline-block mt-1 text-[9px] font-semibold px-2 py-0.5 rounded-full text-primary-foreground ${(paymentStatusLabels[order.paymentStatus || "unpaid"] || paymentStatusLabels.unpaid).color}`}>
+                    {(paymentStatusLabels[order.paymentStatus || "unpaid"] || paymentStatusLabels.unpaid).label}
+                  </span>
               </div>
               </div>
               {/* Agent assignment */}

@@ -17,6 +17,7 @@ import { downloadReceiptPDF } from "@/lib/receipt-pdf";
 
 
 const ADMIN_WHATSAPP = "22788082987";
+const IPAY_CHECKOUT_URL = "https://i-pay.money/merchant_payment_desks/489661832415";
 
 type GeoPos = { lat: number; lng: number };
 
@@ -38,6 +39,7 @@ const OrderPage = () => {
   const [promoInput, setPromoInput] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [whatsappFallback, setWhatsappFallback] = useState<{ text: string; phone: string; order?: Order } | null>(null);
 
   const isOnline = useNetworkStatus();
@@ -159,10 +161,13 @@ const OrderPage = () => {
   };
 
   const handleSubmit = async () => {
+    if (submitting) return;
     if (selectedOptions.size === 0 || !name || !phone) {
       toast.error("Veuillez remplir tous les champs et choisir au moins une option");
       return;
     }
+    // Instant visual feedback (especially before the iPay redirect)
+    setSubmitting(true);
 
     const optionsArray = Array.from(selectedOptions.values());
     const firstOpt = optionsArray[0];
@@ -191,9 +196,20 @@ const OrderPage = () => {
       discount,
     };
 
+    // Persist the iPay context BEFORE the network call so the redirect can fire instantly
+    if (payment === "ipaymoney" && navigator.onLine) {
+      try {
+        localStorage.setItem(
+          "washgo_pending_ipay",
+          JSON.stringify({ order, ts: Date.now() })
+        );
+      } catch {}
+    }
+
     try {
       await addOrder(order);
     } catch (err) {
+      setSubmitting(false);
       toast.error("Erreur lors de l'enregistrement de la commande");
       return;
     }
@@ -247,7 +263,7 @@ const OrderPage = () => {
       toast.success("Commande enregistrée ! 🎉");
     }
     if (payment === "ipaymoney" && navigator.onLine) {
-      // Persist order context so we can restore the confirmation screen when the user comes back from iPay
+      // Refresh the stored context with the WhatsApp messages, then redirect immediately
       try {
         localStorage.setItem(
           "washgo_pending_ipay",
@@ -259,10 +275,11 @@ const OrderPage = () => {
           })
         );
       } catch {}
-      toast.info("Redirection vers iPay Money…");
-      window.location.href = "https://i-pay.money/merchant_payment_desks/489661832415";
+      window.location.replace(IPAY_CHECKOUT_URL);
       return;
     }
+
+    setSubmitting(false);
 
 
     navigate("/order-confirmation", {
@@ -581,8 +598,12 @@ const OrderPage = () => {
                   <span className="text-gradient">{total.toLocaleString("fr-FR")} FCFA</span>
                 </div>
               </div>
-              <Button variant="hero" size="lg" className="w-full rounded-2xl h-14 text-base font-bold" onClick={handleSubmit}>
-                Commander maintenant
+              <Button variant="hero" size="lg" disabled={submitting} className="w-full rounded-2xl h-14 text-base font-bold" onClick={handleSubmit}>
+                {submitting ? (
+                  <><Loader2 className="w-5 h-5 mr-2 animate-spin" />{payment === "ipaymoney" ? "Redirection vers iPay…" : "Enregistrement…"}</>
+                ) : (
+                  <>Commander maintenant</>
+                )}
               </Button>
             </motion.div>
           )}
