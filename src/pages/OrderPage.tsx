@@ -197,7 +197,6 @@ const OrderPage = () => {
     };
 
     // Persist the iPay context BEFORE the network call so the redirect can fire instantly
-    const clientPhoneDigitsEarly = phone.replace(/\D/g, "");
     if (payment === "ipaymoney" && navigator.onLine) {
       try {
         localStorage.setItem(
