@@ -313,7 +313,7 @@ const OrderPage = () => {
   ];
 
   return (
-    <div className="min-h-screen pb-24 bg-white">
+    <div className="min-h-screen pb-48 bg-white">
       {/* Custom header */}
       <div className="hero-gradient px-5 pt-6 pb-8 relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_60%)]" />
@@ -627,7 +627,7 @@ const OrderPage = () => {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 90, opacity: 0 }}
             transition={{ type: "spring", stiffness: 320, damping: 30 }}
-            className="fixed bottom-0 inset-x-0 z-40 border-t border-border/70 bg-background/85 backdrop-blur-xl px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            className="fixed bottom-[68px] inset-x-0 z-40 border-t border-border/70 bg-background/90 backdrop-blur-xl px-5 pt-3 pb-3 shadow-[0_-8px_30px_-12px_rgba(0,0,0,0.25)]"
           >
             <div className="container max-w-lg mx-auto flex items-center gap-3">
               <div className="min-w-0">
