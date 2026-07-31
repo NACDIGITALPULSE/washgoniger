@@ -160,14 +160,20 @@ const OrderPage = () => {
     );
   };
 
+  const normalizedPhone = phone.replace(/\D/g, "");
+  const phoneValid = normalizedPhone.length >= 8;
+  const addressValid = location !== "domicile" || address.trim().length > 2;
+  const formValid = selectedOptions.size > 0 && name.trim().length > 1 && phoneValid && addressValid;
+
   const handleSubmit = async () => {
     if (submitting) return;
-    if (selectedOptions.size === 0 || !name || !phone) {
-      toast.error("Veuillez remplir tous les champs et choisir au moins une option");
-      return;
-    }
+    if (selectedOptions.size === 0) return toast.error("Choisissez au moins une option");
+    if (name.trim().length < 2) return toast.error("Indiquez votre nom complet");
+    if (!phoneValid) return toast.error("Numéro de téléphone invalide (8 chiffres minimum)");
+    if (!addressValid) return toast.error("Indiquez votre adresse à Niamey");
     // Instant visual feedback (especially before the iPay redirect)
     setSubmitting(true);
+
 
     const optionsArray = Array.from(selectedOptions.values());
     const firstOpt = optionsArray[0];
@@ -206,13 +212,23 @@ const OrderPage = () => {
       } catch {}
     }
 
-    try {
-      await addOrder(order);
-    } catch (err) {
-      setSubmitting(false);
-      toast.error("Erreur lors de l'enregistrement de la commande");
-      return;
+    const isIpay = payment === "ipaymoney" && navigator.onLine;
+    const savePromise = addOrder(order);
+    if (isIpay) {
+      // Don't block the redirect on the network round-trip: the order is already
+      // persisted locally (offline queue + iPay context) and syncs in background.
+      savePromise.catch(() => {});
+      await Promise.race([savePromise, new Promise((r) => setTimeout(r, 900))]);
+    } else {
+      try {
+        await savePromise;
+      } catch (err) {
+        setSubmitting(false);
+        toast.error("Erreur lors de l'enregistrement de la commande");
+        return;
+      }
     }
+
 
     localStorage.setItem("washgo_phone", phone);
 
@@ -297,7 +313,7 @@ const OrderPage = () => {
   ];
 
   return (
-    <div className="min-h-screen pb-24 bg-white">
+    <div className="min-h-screen pb-48 bg-white">
       {/* Custom header */}
       <div className="hero-gradient px-5 pt-6 pb-8 relative">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_60%)]" />
@@ -598,17 +614,57 @@ const OrderPage = () => {
                   <span className="text-gradient">{total.toLocaleString("fr-FR")} FCFA</span>
                 </div>
               </div>
-              <Button variant="hero" size="lg" disabled={submitting} className="w-full rounded-2xl h-14 text-base font-bold" onClick={handleSubmit}>
-                {submitting ? (
-                  <><Loader2 className="w-5 h-5 mr-2 animate-spin" />{payment === "ipaymoney" ? "Redirection vers iPay…" : "Enregistrement…"}</>
-                ) : (
-                  <>Commander maintenant</>
-                )}
-              </Button>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      {/* Barre d'action persistante (checkout rapide) */}
+      <AnimatePresence>
+        {selectedOptions.size > 0 && (
+          <motion.div
+            initial={{ y: 90, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 90, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 320, damping: 30 }}
+            className="fixed bottom-[68px] inset-x-0 z-40 border-t border-border/70 bg-background/90 backdrop-blur-xl px-5 pt-3 pb-3 shadow-[0_-8px_30px_-12px_rgba(0,0,0,0.25)]"
+          >
+            <div className="container max-w-lg mx-auto flex items-center gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Total</p>
+                <p className="text-lg font-extrabold text-gradient leading-none">
+                  {total.toLocaleString("fr-FR")} F
+                </p>
+              </div>
+              <Button
+                variant="hero"
+                size="lg"
+                disabled={submitting || !formValid}
+                className="flex-1 rounded-2xl h-14 text-base font-bold"
+                onClick={handleSubmit}
+              >
+                {submitting ? (
+                  <><Loader2 className="w-5 h-5 mr-2 animate-spin" />{payment === "ipaymoney" ? "Redirection vers iPay…" : "Enregistrement…"}</>
+                ) : payment === "ipaymoney" ? (
+                  <>💳 Payer {total.toLocaleString("fr-FR")} F</>
+                ) : (
+                  <>Commander maintenant</>
+                )}
+              </Button>
+            </div>
+            {!formValid && (
+              <p className="container max-w-lg mx-auto text-[11px] text-muted-foreground mt-1.5">
+                {name.trim().length < 2
+                  ? "Ajoutez votre nom pour continuer"
+                  : !phoneValid
+                  ? "Ajoutez un numéro de téléphone valide"
+                  : "Indiquez votre adresse de livraison"}
+              </p>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
 
       {/* Fallback WhatsApp bloqué */}
       <AnimatePresence>

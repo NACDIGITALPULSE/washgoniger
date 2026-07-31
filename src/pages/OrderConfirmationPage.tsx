@@ -11,6 +11,8 @@ import { WhatsAppShareFallback } from "@/components/WhatsAppShareFallback";
 import { useOrderRealtime } from "@/hooks/useOrderRealtime";
 
 const ADMIN_WHATSAPP = "22788082987";
+const IPAY_CHECKOUT_URL = "https://i-pay.money/merchant_payment_desks/489661832415";
+
 
 const paymentBadge: Record<string, { label: string; color: string }> = {
   unpaid: { label: "Non payé", color: "bg-muted text-muted-foreground border-border" },
@@ -286,43 +288,50 @@ const OrderConfirmationPage = () => {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
           className="text-center text-muted-foreground text-sm mt-1 mb-4"
         >
-          Notifiez l'admin sur WhatsApp pour valider votre commande.
+          Envoyez la confirmation sur WhatsApp — à vous et à WashGo.
         </motion.p>
 
-        {adminWA && (
-          <motion.a
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
-            href={`https://wa.me/${adminWA.phone}?text=${encodeURIComponent(adminWA.message)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mb-5 mx-auto max-w-sm flex items-center justify-center gap-2 h-12 px-5 rounded-2xl bg-[#25D366] hover:bg-[#1ebe5d] text-white font-bold shadow-lg active:scale-[0.98] transition-transform"
-          >
-            <MessageCircle className="w-5 h-5" />
-            Notifier l'admin sur WhatsApp
-          </motion.a>
-        )}
-
-        {clientWAInit && (() => {
+        {(adminWA || clientWAInit) && (() => {
           const statusLine = `📡 *Statut actuel:* ${statusBadge[order.status]?.label || order.status}`;
-          // Rebuild the client message with the live status (sync from admin → client)
-          const updatedMsg = clientWAInit.message.replace(
-            /📡 \*Statut actuel:\*[^\n]*/,
-            statusLine
-          );
+          const clientMsg = clientWAInit?.message.replace(/📡 \*Statut actuel:\*[^\n]*/, statusLine);
           return (
-            <motion.a
-              key={order.status}
-              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              href={`https://wa.me/${clientWAInit.phone}?text=${encodeURIComponent(updatedMsg)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mb-5 mx-auto max-w-sm flex items-center justify-center gap-2 h-12 px-5 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg active:scale-[0.98] transition-transform"
+            <motion.div
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
+              className="rounded-[24px] p-4 glass-card border border-border/60 backdrop-blur-xl mb-5 space-y-2"
             >
-              <MessageCircle className="w-5 h-5" />
-              Recevoir ma confirmation WhatsApp
-            </motion.a>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                Confirmation WhatsApp
+              </p>
+              {clientWAInit && clientMsg && (
+                <a
+                  key={order.status}
+                  href={`https://wa.me/${clientWAInit.phone}?text=${encodeURIComponent(clientMsg)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 h-12 px-5 rounded-2xl bg-[#25D366] hover:bg-[#1ebe5d] text-white font-bold shadow-lg active:scale-[0.98] transition-transform"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  1. Recevoir ma confirmation
+                </a>
+              )}
+              {adminWA && (
+                <a
+                  href={`https://wa.me/${adminWA.phone}?text=${encodeURIComponent(adminWA.message)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 h-12 px-5 rounded-2xl border-2 border-[#25D366]/50 text-foreground font-bold active:scale-[0.98] transition-transform"
+                >
+                  <MessageCircle className="w-5 h-5 text-[#25D366]" />
+                  2. Notifier WashGo Niger
+                </a>
+              )}
+              <p className="text-[11px] text-muted-foreground text-center pt-1">
+                Les deux messages contiennent le n° de commande, le service, l'adresse et le total.
+              </p>
+            </motion.div>
           );
         })()}
+
 
 
 
@@ -356,16 +365,29 @@ const OrderConfirmationPage = () => {
           </motion.div>
         </motion.div>
 
-        {/* Paiement non confirmé → vérifier ou annuler */}
-        {order.payment === "ipaymoney" && payStatus !== "paid" && order.status !== "cancelled" && (
+        {/* Paiement — bouton payer + vérification */}
+        {payStatus !== "paid" && order.status !== "cancelled" && (
           <motion.div
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             className="rounded-[24px] p-4 glass-card border border-warning/40 backdrop-blur-xl mb-4"
           >
-            <p className="text-sm font-semibold text-foreground mb-1">Paiement non confirmé</p>
-            <p className="text-[12px] text-muted-foreground mb-3">
-              Si vous avez déjà payé sur iPay Money, actualisez le statut. Sinon, vous pouvez annuler cette commande.
+            <p className="text-sm font-semibold text-foreground mb-1">
+              {order.payment === "ipaymoney" ? "Paiement non confirmé" : "Payer en ligne (optionnel)"}
             </p>
+            <p className="text-[12px] text-muted-foreground mb-3">
+              {order.payment === "ipaymoney"
+                ? "Réglez maintenant via iPay Money, ou actualisez le statut si c'est déjà fait."
+                : "Vous avez choisi le paiement en espèces. Vous pouvez aussi régler tout de suite par carte / mobile money."}
+            </p>
+            <a
+              href={IPAY_CHECKOUT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mb-2 flex items-center justify-center gap-2 h-12 rounded-2xl bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold shadow-lg active:scale-[0.98] transition-transform"
+            >
+              <CreditCard className="w-5 h-5" />
+              Payer {order.total.toLocaleString("fr-FR")} FCFA
+            </a>
             <div className="grid grid-cols-2 gap-2">
               <Button variant="outline" className="rounded-2xl h-11" disabled={checkingPayment} onClick={() => refreshOrder(false)}>
                 {checkingPayment ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1.5" />}
@@ -378,6 +400,7 @@ const OrderConfirmationPage = () => {
             </div>
           </motion.div>
         )}
+
 
         {/* ETA Card */}
         <motion.div
