@@ -160,14 +160,20 @@ const OrderPage = () => {
     );
   };
 
+  const normalizedPhone = phone.replace(/\D/g, "");
+  const phoneValid = normalizedPhone.length >= 8;
+  const addressValid = location !== "domicile" || address.trim().length > 2;
+  const formValid = selectedOptions.size > 0 && name.trim().length > 1 && phoneValid && addressValid;
+
   const handleSubmit = async () => {
     if (submitting) return;
-    if (selectedOptions.size === 0 || !name || !phone) {
-      toast.error("Veuillez remplir tous les champs et choisir au moins une option");
-      return;
-    }
+    if (selectedOptions.size === 0) return toast.error("Choisissez au moins une option");
+    if (name.trim().length < 2) return toast.error("Indiquez votre nom complet");
+    if (!phoneValid) return toast.error("Numéro de téléphone invalide (8 chiffres minimum)");
+    if (!addressValid) return toast.error("Indiquez votre adresse à Niamey");
     // Instant visual feedback (especially before the iPay redirect)
     setSubmitting(true);
+
 
     const optionsArray = Array.from(selectedOptions.values());
     const firstOpt = optionsArray[0];
