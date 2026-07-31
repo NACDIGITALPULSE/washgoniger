@@ -212,13 +212,23 @@ const OrderPage = () => {
       } catch {}
     }
 
-    try {
-      await addOrder(order);
-    } catch (err) {
-      setSubmitting(false);
-      toast.error("Erreur lors de l'enregistrement de la commande");
-      return;
+    const isIpay = payment === "ipaymoney" && navigator.onLine;
+    const savePromise = addOrder(order);
+    if (isIpay) {
+      // Don't block the redirect on the network round-trip: the order is already
+      // persisted locally (offline queue + iPay context) and syncs in background.
+      savePromise.catch(() => {});
+      await Promise.race([savePromise, new Promise((r) => setTimeout(r, 900))]);
+    } else {
+      try {
+        await savePromise;
+      } catch (err) {
+        setSubmitting(false);
+        toast.error("Erreur lors de l'enregistrement de la commande");
+        return;
+      }
     }
+
 
     localStorage.setItem("washgo_phone", phone);
 
