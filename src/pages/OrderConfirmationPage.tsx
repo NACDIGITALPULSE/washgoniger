@@ -358,16 +358,29 @@ const OrderConfirmationPage = () => {
           </motion.div>
         </motion.div>
 
-        {/* Paiement non confirmé → vérifier ou annuler */}
-        {order.payment === "ipaymoney" && payStatus !== "paid" && order.status !== "cancelled" && (
+        {/* Paiement — bouton payer + vérification */}
+        {payStatus !== "paid" && order.status !== "cancelled" && (
           <motion.div
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             className="rounded-[24px] p-4 glass-card border border-warning/40 backdrop-blur-xl mb-4"
           >
-            <p className="text-sm font-semibold text-foreground mb-1">Paiement non confirmé</p>
-            <p className="text-[12px] text-muted-foreground mb-3">
-              Si vous avez déjà payé sur iPay Money, actualisez le statut. Sinon, vous pouvez annuler cette commande.
+            <p className="text-sm font-semibold text-foreground mb-1">
+              {order.payment === "ipaymoney" ? "Paiement non confirmé" : "Payer en ligne (optionnel)"}
             </p>
+            <p className="text-[12px] text-muted-foreground mb-3">
+              {order.payment === "ipaymoney"
+                ? "Réglez maintenant via iPay Money, ou actualisez le statut si c'est déjà fait."
+                : "Vous avez choisi le paiement en espèces. Vous pouvez aussi régler tout de suite par carte / mobile money."}
+            </p>
+            <a
+              href={IPAY_CHECKOUT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mb-2 flex items-center justify-center gap-2 h-12 rounded-2xl bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold shadow-lg active:scale-[0.98] transition-transform"
+            >
+              <CreditCard className="w-5 h-5" />
+              Payer {order.total.toLocaleString("fr-FR")} FCFA
+            </a>
             <div className="grid grid-cols-2 gap-2">
               <Button variant="outline" className="rounded-2xl h-11" disabled={checkingPayment} onClick={() => refreshOrder(false)}>
                 {checkingPayment ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1.5" />}
@@ -380,6 +393,7 @@ const OrderConfirmationPage = () => {
             </div>
           </motion.div>
         )}
+
 
         {/* ETA Card */}
         <motion.div
