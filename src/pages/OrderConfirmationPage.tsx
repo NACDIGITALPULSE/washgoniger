@@ -11,6 +11,8 @@ import { WhatsAppShareFallback } from "@/components/WhatsAppShareFallback";
 import { useOrderRealtime } from "@/hooks/useOrderRealtime";
 
 const ADMIN_WHATSAPP = "22788082987";
+const IPAY_CHECKOUT_URL = "https://i-pay.money/merchant_payment_desks/489661832415";
+
 
 const paymentBadge: Record<string, { label: string; color: string }> = {
   unpaid: { label: "Non payé", color: "bg-muted text-muted-foreground border-border" },
